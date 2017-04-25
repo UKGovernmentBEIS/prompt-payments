@@ -25,7 +25,7 @@ import services.{CompanyDetail, CompanySearchResult, CompanySearchService, Paged
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockCompanySearch @Inject()(implicit ec: ExecutionContext) extends CompanySearchService {
+class MockCompanySearch @Inject()(implicit ec: ExecutionContext) extends CompanySearchService[Future] {
 
   val companies: Seq[CompanySearchResult] = Seq(
     CompanySearchResult(CompaniesHouseId("000000001"), "The Testing Company", "1 Testing Way, Mockington, Stubshire"),

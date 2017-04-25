@@ -15,23 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package services
+package slicks.repos
 
-import models.CompaniesHouseId
+import cats.Monad
+import slick.dbio.DBIO
 
-trait CompanyAuthService[F[_]] {
-  def authoriseUrl(companiesHouseId: CompaniesHouseId): String
+import scala.concurrent.ExecutionContext
 
-  def convertCode(code: String): F[OAuthToken]
+object DBIOMonad {
+  implicit def dbioMonadInstance(implicit ec: ExecutionContext) = new Monad[DBIO] {
+    override def flatMap[A, B](fa: DBIO[A])(f: (A) => DBIO[B]): DBIO[B] = fa.flatMap(f)
 
-  def refreshAccessToken(oAuthToken: OAuthToken): F[OAuthToken]
+    override def tailRecM[A, B](a: A)(f: (A) => DBIO[Either[A, B]]): DBIO[B] = f(a).flatMap {
+      case Left(a1) => tailRecM(a1)(f)
+      case Right(c) => pure(c)
+    }
 
-  def authoriseParams(companiesHouseId: CompaniesHouseId): Map[String, Seq[String]]
-
-  def isInScope(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Boolean]
-
-  def emailAddress(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Option[String]]
-
-  def targetScope(companiesHouseId: CompaniesHouseId): String
+    override def pure[A](x: A): DBIO[A] = DBIO.successful(x)
+  }
 }
-

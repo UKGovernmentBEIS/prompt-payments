@@ -15,23 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package services
+package utils
 
-import models.CompaniesHouseId
+import cats.arrow.FunctionK
 
-trait CompanyAuthService[F[_]] {
-  def authoriseUrl(companiesHouseId: CompaniesHouseId): String
+import scala.concurrent.Future
 
-  def convertCode(code: String): F[OAuthToken]
-
-  def refreshAccessToken(oAuthToken: OAuthToken): F[OAuthToken]
-
-  def authoriseParams(companiesHouseId: CompaniesHouseId): Map[String, Seq[String]]
-
-  def isInScope(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Boolean]
-
-  def emailAddress(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Option[String]]
-
-  def targetScope(companiesHouseId: CompaniesHouseId): String
+class EvalFuture extends FunctionK[Future, Future] {
+  override def apply[A](fa: Future[A]) = fa
 }
-

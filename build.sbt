@@ -69,6 +69,21 @@ javaOptions := Seq(
   "-Dlogger.file=src/main/resources/development.logger.xml"
 )
 
+scalacOptions ++= Seq(
+  "-language:higherKinds",
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-unchecked",
+  "-Xlint",
+  "-Yinline-warnings",
+  "-Yno-adapted-args",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-value-discard",
+  "-Xfuture"
+)
+
 // need this because we've disabled the PlayLayoutPlugin. without it twirl templates won't get
 // re-compiled on change in dev mode
 PlayKeys.playMonitoredFiles ++= (sourceDirectories in(Compile, TwirlKeys.compileTemplates)).value

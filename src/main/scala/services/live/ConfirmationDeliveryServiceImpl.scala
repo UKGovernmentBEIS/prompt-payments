@@ -23,23 +23,25 @@ import dbrows.ConfirmationPendingRow
 import org.joda.time.LocalDateTime
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
+import repos.{ConfirmationRepo, FiledReport}
 import services._
 import uk.gov.service.notify.NotificationClientException
 import views.html.ReportNum
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ConfirmationDeliveryServiceImpl @Inject()(confirmationRepo: ConfirmationService, notifyService: NotifyService) extends ConfirmationDeliveryService {
+class ConfirmationDeliveryServiceImpl @Inject()(confirmationRepo: ConfirmationRepo[Future], notifyService: NotifyService[Future])(implicit ec: ExecutionContext)
+  extends ConfirmationDeliveryService[Future] {
   val df = DateTimeFormat.forPattern("d MMMM YYYY")
 
-  def attemptDelivery(implicit ec: ExecutionContext): Future[Option[DeliveryOutcome]] = {
+  def attemptDelivery: Future[Option[DeliveryOutcome]] = {
     confirmationRepo.findUnconfirmedAndLock().flatMap {
       case Some((confirmation, report)) => attemptToSend(confirmation, report).map(Some(_))
       case _ => Future.successful(None)
     }
   }
 
-  private def attemptToSend(confirmation: ConfirmationPendingRow, report: FiledReport)(implicit ec: ExecutionContext): Future[DeliveryOutcome] = {
+  private def attemptToSend(confirmation: ConfirmationPendingRow, report: FiledReport): Future[DeliveryOutcome] = {
     notifyService.sendEmail(confirmation.emailAddress, buildParams(confirmation, report)).flatMap { response =>
       confirmationRepo.confirmationSent(report.header.id, LocalDateTime.now, response)
         .map(_ => ConfirmationSent(report.header.id))

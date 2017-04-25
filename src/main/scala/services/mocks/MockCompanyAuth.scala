@@ -23,7 +23,7 @@ import services.{CompanyAuthService, OAuthToken}
 
 import scala.concurrent.Future
 
-class MockCompanyAuth extends CompanyAuthService {
+class MockCompanyAuth extends CompanyAuthService[Future] {
 
   val emails: Map[CompaniesHouseId, String] = Map(
     CompaniesHouseId("000000001") -> "foo@bar.com",

@@ -22,7 +22,7 @@ import uk.gov.service.notify.SendEmailResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MockNotify extends NotifyService {
+class MockNotify extends NotifyService[Future] {
 
   val json =
     """

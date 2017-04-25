@@ -32,7 +32,8 @@ import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Controller}
 import play.twirl.api.Html
 import questionnaire._
-import services.{CompanyDetail, CompanySearchResult, FiledReport, PagedResults}
+import repos.FiledReport
+import services.{CompanyDetail, CompanySearchResult, PagedResults}
 import utils.YesNo.Yes
 import utils.{SystemTimeSource, YesNo}
 

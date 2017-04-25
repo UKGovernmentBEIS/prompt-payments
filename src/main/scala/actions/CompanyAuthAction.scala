@@ -30,6 +30,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.mvc._
+import repos.{SessionId, SessionRepo}
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,8 +62,8 @@ case class CompanyAuthRequest[A](sessionId: SessionId, companyDetail: CompanyDet
   */
 class CompanyAuthAction @Inject()(
                                    SessionAction: SessionAction,
-                                   sessionService: SessionService,
-                                   companyAuthService: CompanyAuthService,
+                                   sessionService: SessionRepo[Future],
+                                   companyAuthService: CompanyAuthService[Future],
                                    val pageConfig: PageConfig)
                                  (implicit ec: ExecutionContext) extends PageHelper {
   def extractTime(s: String): Option[LocalDateTime] = Try(new LocalDateTime(s.toLong)).toOption

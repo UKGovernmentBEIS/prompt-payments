@@ -17,31 +17,33 @@
 
 package controllers
 
-import javax.inject.Inject
-
+import cats.{Monad, MonadError, ~>}
 import config.PageConfig
-import controllers.CoHoCodeController.CodeOption.{Colleague, Register}
 import models.CompaniesHouseId
 import play.api.data.Forms.single
 import play.api.data.{Form, FormError, Forms}
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Controller, RequestHeader, Result}
 import play.twirl.api.Html
-import services.{CompanyAuthService, CompanySearchService, ReportService}
+import repos.ReportRepo
+import services.{CompanyAuthService, CompanySearchService}
 import utils.AdjustErrors
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class CoHoCodeController @Inject()(
-                                    companyAuth: CompanyAuthService,
-                                    val companySearch: CompanySearchService,
-                                    val reportService: ReportService,
-                                    val pageConfig: PageConfig
-                                  )(implicit val ec: ExecutionContext, messages: MessagesApi)
+class CoHoCodeController[F[_], DbEffect[_]](companyAuth: CompanyAuthService[F],
+                                            val companySearch: CompanySearchService[F],
+                                            val reportRepo: ReportRepo[DbEffect],
+                                            val pageConfig: PageConfig,
+                                            val evalDb: DbEffect ~> F,
+                                            evalF: F ~> Future
+                                           )(implicit val monadF: MonadError[F, Throwable],
+                                             dbEffectMonad: Monad[DbEffect],
+                                             messages: MessagesApi)
   extends Controller
     with PageHelper
-    with SearchHelper
-    with CompanyHelper {
+    with SearchHelper[F, DbEffect]
+    with CompanyHelper[F] {
 
   import CoHoCodeController._
   import views.html.{report => pages}
@@ -52,25 +54,21 @@ class CoHoCodeController @Inject()(
       page("If you don't have a Companies House authentication code")(home, pages.companiesHouseOptions(co.companyName, companiesHouseId, form))
     }
 
-  def code(companiesHouseId: CompaniesHouseId) = Action.async(implicit request => codePage(companiesHouseId))
+  def code(companiesHouseId: CompaniesHouseId) = Action.async(implicit request => evalF(codePage(companiesHouseId)))
+
 
   def codeOptions(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>
-    def resultFor(codeOption: CodeOption): Future[Result] = Future {
-      codeOption match {
-        case Colleague => Redirect(routes.ReportController.colleague(companiesHouseId))
-        case Register => Redirect(routes.ReportController.register(companiesHouseId))
-      }
+    evalF {
+      emptyForm.bindFromRequest().fold(errs => codePage(companiesHouseId, errs, BadRequest(_)), c => implicitly[Monad[F]].pure(resultFor(c, companiesHouseId)))
     }
-
-    emptyForm.bindFromRequest().fold(errs => codePage(companiesHouseId, errs, BadRequest(_)), resultFor)
   }
-
 }
 
 object CoHoCodeController {
 
   import enumeratum.EnumEntry.Lowercase
   import enumeratum._
+  import play.api.mvc.Results.Redirect
   import utils.EnumFormatter
 
   sealed trait CodeOption extends EnumEntry with Lowercase
@@ -93,5 +91,12 @@ object CoHoCodeController {
   }
 
   val emptyForm: Form[CodeOption] = Form(single("nextstep" -> codeOptionMapping))
+
+  def resultFor(codeOption: CodeOption, companiesHouseId: CompaniesHouseId): Result = {
+    codeOption match {
+      case CodeOption.Colleague => Redirect(routes.ReportController.colleague(companiesHouseId))
+      case CodeOption.Register => Redirect(routes.ReportController.register(companiesHouseId))
+    }
+  }
 
 }

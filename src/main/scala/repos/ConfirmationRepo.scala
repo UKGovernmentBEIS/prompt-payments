@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package services
+package repos
 
 import com.google.inject.ImplementedBy
 import dbrows.ConfirmationPendingRow
@@ -24,27 +24,25 @@ import org.joda.time.LocalDateTime
 import slicks.repos.ConfirmationTable
 import uk.gov.service.notify.{NotificationClientException, SendEmailResponse}
 
-import scala.concurrent.Future
-
 @ImplementedBy(classOf[ConfirmationTable])
-trait ConfirmationService {
+trait ConfirmationRepo[F[_]] {
   /**
     * Look for a single confirmation record that is ready to be sent and, lock it for the configured
     * locking period. If one is found, return both the confirmation detail and the report it relates
     * to.
     */
-  def findUnconfirmedAndLock(): Future[Option[(ConfirmationPendingRow, FiledReport)]]
+  def findUnconfirmedAndLock(): F[Option[(ConfirmationPendingRow, FiledReport)]]
 
 
   /**
     * Record that a confirmation was successfully sent for the given report.
     */
-  def confirmationSent(reportId: ReportId, when: LocalDateTime, response: SendEmailResponse): Future[Unit]
+  def confirmationSent(reportId: ReportId, when: LocalDateTime, response: SendEmailResponse): F[Unit]
 
   /**
     * Record that the attempt to send the confirmation resulted in a permanent failure.
     */
-  def confirmationFailed(reportId: ReportId, when: LocalDateTime, ex: NotificationClientException): Future[Unit]
+  def confirmationFailed(reportId: ReportId, when: LocalDateTime, ex: NotificationClientException): F[Unit]
 }
 
 

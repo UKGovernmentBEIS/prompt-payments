@@ -21,7 +21,7 @@ import javax.inject.Inject
 
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{ActionBuilder, Request, Result, WrappedRequest}
-import services.{SessionId, SessionService}
+import repos.{SessionId, SessionRepo}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +35,7 @@ case class SessionRequest[A](sessionId: SessionId, request: Request[A]) extends 
   * If a sessionId is found on the request, but does not exist in the SessionService, then it is assumed that the
   * session has timed out and the user is redirected to an appropriate error page.
   */
-class SessionAction @Inject()(sessionService: SessionService)(implicit ec: ExecutionContext) extends ActionBuilder[SessionRequest] {
+class SessionAction @Inject()(sessionService: SessionRepo[Future])(implicit ec: ExecutionContext) extends ActionBuilder[SessionRequest] {
 
   import SessionAction.sessionIdKey
 

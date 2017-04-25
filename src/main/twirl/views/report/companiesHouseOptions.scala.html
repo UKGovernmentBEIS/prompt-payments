@@ -8,7 +8,7 @@
         <h1 class="heading-xlarge">Publish a report for:<br> @name</h1>
         <p class="lede">If you don’t have a Companies House authentication code, you have two options.</p>
         <h3 class="heading-medium">Select an option</h3>
-        <form action="@routes.CoHoCodeController.codeOptions(id)" method="POST">
+        <form action="@routes.CoHoCodeControllerImpl.codeOptions(id)" method="POST">
             <div class="form-group @errorClass(form("nextstep"))">
                 <fieldset class="form-group">
                     <legend>

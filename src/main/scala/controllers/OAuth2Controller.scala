@@ -24,14 +24,15 @@ import cats.data.OptionT
 import cats.instances.future._
 import models.CompaniesHouseId
 import play.api.mvc._
+import repos.SessionRepo
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2Controller @Inject()(
-                                  sessionService: SessionService,
-                                  companySearchService: CompanySearchService,
-                                  companyAuthService: CompanyAuthService,
+                                  sessionService: SessionRepo[Future],
+                                  companySearchService: CompanySearchService[Future],
+                                  companyAuthService: CompanyAuthService[Future],
                                   SessionAction: SessionAction)(implicit exec: ExecutionContext) extends Controller {
 
   def startOauthDance(companiesHouseId: CompaniesHouseId)(implicit request: RequestHeader): Result = {

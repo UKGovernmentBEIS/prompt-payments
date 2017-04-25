@@ -28,7 +28,7 @@ import uk.gov.service.notify.{NotificationClient, SendEmailResponse}
 import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 
-class NotifyServiceImpl @Inject()(actorSystem: ActorSystem, config: NotifyConfig) extends NotifyService {
+class NotifyServiceImpl @Inject()(actorSystem: ActorSystem, config: NotifyConfig) extends NotifyService[Future] {
   val key = config.apiKey
 
   /**

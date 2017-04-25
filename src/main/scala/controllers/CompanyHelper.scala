@@ -17,21 +17,21 @@
 
 package controllers
 
+import cats.Functor
+import cats.syntax.functor._
 import models.CompaniesHouseId
 import play.api.mvc.Result
 import play.twirl.api.Html
 import services.{CompanyDetail, CompanySearchService}
 
-import scala.concurrent.{ExecutionContext, Future}
+trait CompanyHelper[F[_]] {
+  implicit val fF : Functor[F] = implicitly[Functor[F]]
 
-trait CompanyHelper {
-  def companySearch: CompanySearchService
-
-  implicit def ec: ExecutionContext
+  def companySearch: CompanySearchService[F]
 
   import play.api.mvc.Results._
 
-  def withCompany(companiesHouseId: CompaniesHouseId, foundResult: Html => Result = Ok(_))(body: CompanyDetail => Html): Future[Result] = {
+  def withCompany(companiesHouseId: CompaniesHouseId, foundResult: Html => Result = Ok(_))(body: CompanyDetail => Html): F[Result] = {
     companySearch.find(companiesHouseId).map {
       case Some(co) => foundResult(body(co))
       case None => BadRequest(s"Unknown company id ${companiesHouseId.id}")

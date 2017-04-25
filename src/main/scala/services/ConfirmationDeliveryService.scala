@@ -21,8 +21,6 @@ import com.google.inject.ImplementedBy
 import models.ReportId
 import services.live.ConfirmationDeliveryServiceImpl
 
-import scala.concurrent.{ExecutionContext, Future}
-
 trait DeliveryOutcome
 
 case class ConfirmationSent(reportId: ReportId) extends DeliveryOutcome
@@ -30,12 +28,12 @@ case class ConfirmationSent(reportId: ReportId) extends DeliveryOutcome
 case class ConfirmationFailed(reportId: ReportId) extends DeliveryOutcome
 
 @ImplementedBy(classOf[ConfirmationDeliveryServiceImpl])
-trait ConfirmationDeliveryService {
+trait ConfirmationDeliveryService[F[_]] {
   /**
     * This function will look for a single pending confirmation and attempt to deliver it.
     *
     * If a confirmation was found and delivery was attempted then, regardless of the outcome of the
     * delivery attempt, a DeliveryOutcome will be returned with the id of the report.
     */
-  def attemptDelivery(implicit ec: ExecutionContext): Future[Option[DeliveryOutcome]]
+  def attemptDelivery: F[Option[DeliveryOutcome]]
 }

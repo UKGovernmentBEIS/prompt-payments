@@ -19,7 +19,7 @@ package dbrows
 
 import org.joda.time.LocalDateTime
 import play.api.libs.json.JsObject
-import services.SessionId
+import repos.SessionId
 
 case class SessionRow(
                        id: SessionId,

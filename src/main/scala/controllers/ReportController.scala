@@ -22,6 +22,8 @@ import javax.inject.Inject
 import actions.SessionAction
 import cats.data.OptionT
 import cats.instances.future._
+import cats.syntax.functor._
+import cats.{Monad, MonadError, ~>}
 import config.PageConfig
 import forms.Validations
 import models.{CompaniesHouseId, ReportId}
@@ -31,21 +33,37 @@ import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Controller}
-import services.{ReportService, _}
+import repos.ReportRepo
+import services._
+import slick.dbio.DBIO
+import slicks.repos.DBIOMonad._
 import utils.YesNo
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReportController @Inject()(
-                                  companyAuth: CompanyAuthService,
-                                  val companySearch: CompanySearchService,
-                                  val reportService: ReportService,
-                                  val pageConfig: PageConfig
-                                )(implicit val ec: ExecutionContext, messages: MessagesApi)
+                                  companyAuth: CompanyAuthService[Future],
+                                  companySearch: CompanySearchService[Future],
+                                  reportRepo: ReportRepo[DBIO],
+                                  pageConfig: PageConfig,
+                                  evalDb: DBIO ~> Future,
+                                  evalF: Future ~> Future
+                                )(implicit ec: ExecutionContext, messages: MessagesApi)
+  extends ReportControllerGen[Future, DBIO](companyAuth, companySearch, reportRepo, pageConfig, evalDb, evalF)
+
+class ReportControllerGen[F[_], DbEffect[_]](
+                                              companyAuth: CompanyAuthService[F],
+                                              val companySearch: CompanySearchService[F],
+                                              val reportRepo: ReportRepo[DbEffect],
+                                              val pageConfig: PageConfig,
+                                              val evalDb: DbEffect ~> F,
+                                              evalF: F ~> Future
+                                            )(implicit val monadF: MonadError[F, Throwable],
+                                              dbEffectMonad: Monad[DbEffect], messages: MessagesApi)
   extends Controller
     with PageHelper
-    with SearchHelper
-    with CompanyHelper {
+    with SearchHelper[F, DbEffect]
+    with CompanyHelper[F] {
 
   import views.html.{report => pages}
 
@@ -64,13 +82,15 @@ class ReportController @Inject()(
     def resultsPage(q: String, results: Option[PagedResults[CompanySearchResult]], countMap: Map[CompaniesHouseId, Int]) =
       page(searchPageTitle)(home, searchHeader, views.html.search.search(q, results, countMap, searchLink, companyLink, pageLink(query, itemsPerPage, _)))
 
-    doSearch(query, pageNumber, itemsPerPage, resultsPage).map(Ok(_))
+    evalF(doSearch(query, pageNumber, itemsPerPage, resultsPage).map(Ok(_)))
   }
 
   def start(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>
-    companySearch.find(companiesHouseId).map {
-      case Some(co) => Ok(page(publishTitle(co.companyName))(home, pages.start(co.companyName, co.companiesHouseId)))
-      case None => NotFound(s"Could not find a company with id ${companiesHouseId.id}")
+    evalF {
+      companySearch.find(companiesHouseId).map {
+        case Some(co) => Ok(page(publishTitle(co.companyName))(home, pages.start(co.companyName, co.companiesHouseId)))
+        case None => NotFound(s"Could not find a company with id ${companiesHouseId.id}")
+      }
     }
   }
 
@@ -85,16 +105,16 @@ class ReportController @Inject()(
       errs => BadRequest(page(signInPageTitle)(home, pages.preLogin(companiesHouseId, errs))),
       hasAccount =>
         if (hasAccount === YesNo.Yes) Redirect(companyAuth.authoriseUrl(companiesHouseId), companyAuth.authoriseParams(companiesHouseId))
-        else Redirect(routes.CoHoCodeController.code(companiesHouseId))
+        else Redirect(routes.CoHoCodeControllerImpl.code(companiesHouseId))
     )
   }
 
   def colleague(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>
-    withCompany(companiesHouseId)(co => page("If you want a colleague to publish a report")(home, pages.askColleague(co.companyName, companiesHouseId)))
+    evalF(withCompany(companiesHouseId)(co => page("If you want a colleague to publish a report")(home, pages.askColleague(co.companyName, companiesHouseId))))
   }
 
   def register(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>
-    withCompany(companiesHouseId)(co => page("Request an authentication code")(home, pages.requestAccessCode(co.companyName, companiesHouseId)))
+    evalF(withCompany(companiesHouseId)(co => page("Request an authentication code")(home, pages.requestAccessCode(co.companyName, companiesHouseId))))
   }
 
   def applyForAuthCode(companiesHouseId: CompaniesHouseId) = Action { implicit request =>
@@ -105,15 +125,17 @@ class ReportController @Inject()(
 
   def view(reportId: ReportId) = Action.async { implicit request =>
     val f = for {
-      report <- OptionT(reportService.findFiled(reportId))
+      report <- OptionT(reportRepo.findFiled(reportId))
     } yield {
       val crumbs = breadcrumbs(homeBreadcrumb)
       Ok(page(s"Payment practice report for ${report.header.companyName}")(crumbs, views.html.search.report(report, df)))
     }
 
-    f.value.map {
-      case Some(ok) => ok
-      case None => NotFound
+    evalF {
+      evalDb(f.value).map {
+        case Some(ok) => ok
+        case None => NotFound
+      }
     }
   }
 }

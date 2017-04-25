@@ -21,7 +21,7 @@ import com.github.tminglei.slickpg.PgPlayJsonSupport
 import dbrows.SessionRow
 import org.joda.time.LocalDateTime
 import play.api.libs.json.JsObject
-import services.SessionId
+import repos.SessionId
 import slicks.DBBinding
 import slicks.helpers.PlayJsonMappers
 

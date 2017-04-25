@@ -30,15 +30,16 @@ import play.api.data.Forms.{single, _}
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Controller, Result}
 import play.twirl.api.Html
+import repos.ReportRepo
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class FilingController @Inject()(
-                                  notifyService: NotifyService,
-                                  reports: ReportService,
+                                  notifyService: NotifyService[Future],
+                                  reports: ReportRepo[Future],
                                   reportValidations: Validations,
-                                  companyAuth: CompanyAuthService,
+                                  companyAuth: CompanyAuthService[Future],
                                   CompanyAuthAction: CompanyAuthAction,
                                   serviceConfig: ServiceConfig,
                                   val pageConfig: PageConfig,

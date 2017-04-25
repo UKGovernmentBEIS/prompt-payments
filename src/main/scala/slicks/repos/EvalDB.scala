@@ -15,23 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package services
+package slicks.repos
 
-import models.CompaniesHouseId
+import javax.inject.Inject
 
-trait CompanyAuthService[F[_]] {
-  def authoriseUrl(companiesHouseId: CompaniesHouseId): String
+import cats.arrow.FunctionK
+import com.github.tminglei.slickpg.ExPostgresDriver
+import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfig}
+import slick.dbio.DBIO
 
-  def convertCode(code: String): F[OAuthToken]
+import scala.concurrent.Future
 
-  def refreshAccessToken(oAuthToken: OAuthToken): F[OAuthToken]
+class EvalDB @Inject()(dbConfigProvider: DatabaseConfigProvider) extends FunctionK[DBIO, Future] with HasDatabaseConfig[ExPostgresDriver] {
+  override protected lazy val dbConfig = dbConfigProvider.get[ExPostgresDriver]
 
-  def authoriseParams(companiesHouseId: CompaniesHouseId): Map[String, Seq[String]]
-
-  def isInScope(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Boolean]
-
-  def emailAddress(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Option[String]]
-
-  def targetScope(companiesHouseId: CompaniesHouseId): String
+  override def apply[A](fa: DBIO[A]): Future[A] = db.run(fa)
 }
-

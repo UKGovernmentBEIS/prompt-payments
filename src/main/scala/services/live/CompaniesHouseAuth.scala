@@ -35,7 +35,7 @@ case class AccessTokenResponse(access_token: String, expires_in: Int, refresh_to
 case class RefreshTokenResponse(access_token: String, expires_in: Int)
 
 class CompaniesHouseAuth @Inject()(val ws: WSClient, config: OAuthConfig)(implicit val ec: ExecutionContext)
-  extends RestService with CompanyAuthService {
+  extends RestService with CompanyAuthService[Future] {
 
   val clientIdParam = "client_id"
   val clientSecretParam = "client_secret"

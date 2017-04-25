@@ -23,7 +23,7 @@ import dbrows.{ConfirmationFailedRow, ConfirmationPendingRow, ConfirmationSentRo
 import models.ReportId
 import org.joda.time.LocalDateTime
 import play.api.db.slick.DatabaseConfigProvider
-import services.{ConfirmationService, FiledReport}
+import repos.{ConfirmationRepo, FiledReport}
 import slick.dbio.Effect.Write
 import slicks.modules.{ConfirmationModule, ReportModule}
 import uk.gov.service.notify.{NotificationClientException, SendEmailResponse}
@@ -32,7 +32,7 @@ import utils.{NotificationClientErrorProcessing, PermanentFailure, TransientFail
 import scala.concurrent.{ExecutionContext, Future}
 
 class ConfirmationTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-  extends ConfirmationService
+  extends ConfirmationRepo[Future]
     with ConfirmationModule
     with ReportModule
     with ReportQueries {

@@ -26,7 +26,7 @@ import models.{CompaniesHouseId, ReportId}
 import org.joda.time.LocalDate
 import org.reactivestreams.Publisher
 import play.api.db.slick.DatabaseConfigProvider
-import services.{FiledReport, Report, ReportService}
+import repos.{FiledReport, Report, ReportRepo}
 import slicks.DBBinding
 import slicks.helpers.RowBuilders
 import slicks.modules.{ConfirmationModule, ReportModule}
@@ -35,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
   extends DBBinding
-    with ReportService
+    with ReportRepo[slick.dbio.DBIO]
     with ReportModule
     with ConfirmationModule
     with ReportQueries
@@ -48,7 +48,7 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
 
   val reportByIdC = Compiled(reportByIdQ _)
 
-  def find(id: ReportId): Future[Option[Report]] = db.run {
+  def find(id: ReportId): DBIO[Option[Report]] =  {
     reportByIdC(id).result.headOption.map(_.map(Report.tupled))
   }
 
@@ -56,7 +56,7 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
 
   val filedReportByIdC = Compiled(filedReportByIdQ _)
 
-  def findFiled(id: ReportId): Future[Option[FiledReport]] = db.run {
+  def findFiled(id: ReportId): DBIO[Option[FiledReport]] =  {
     filedReportByIdC(id).result.headOption.map(_.map(FiledReport.tupled))
   }
 
@@ -64,7 +64,7 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
 
   val reportByCoNoC = Compiled(reportByCoNoQ _)
 
-  def byCompanyNumber(companiesHouseId: CompaniesHouseId): Future[Seq[Report]] = db.run {
+  def byCompanyNumber(companiesHouseId: CompaniesHouseId): DBIO[Seq[Report]] =  {
     reportByCoNoC(companiesHouseId).result.map(_.map(Report.tupled))
   }
 
@@ -87,7 +87,7 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
                        review: ReportReviewModel,
                        confirmationEmailAddress: String,
                        reportUrl: ReportId => String
-                     ): Future[ReportId] = db.run {
+                     ): DBIO[ReportId] =  {
     val header = ReportHeaderRow(ReportId(0), companyName, companiesHouseId, new LocalDate(), new LocalDate())
 
     (reportHeaderTable.returning(reportHeaderTable.map(_.id)) += header).flatMap { reportId =>

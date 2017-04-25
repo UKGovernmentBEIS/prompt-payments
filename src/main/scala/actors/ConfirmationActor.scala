@@ -21,8 +21,11 @@ import javax.inject.Inject
 
 import akka.actor.Actor
 import play.api.Logger
-import services.ConfirmationDeliveryService
+import repos.ConfirmationRepo
+import services.live.ConfirmationDeliveryServiceImpl
+import services.NotifyService
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Success
@@ -41,13 +44,15 @@ import scala.util.Success
   * If no delivery was attempted it takes no action and waits for the next scheduled event.
   *
   */
-class ConfirmationActor @Inject()(deliveryService: ConfirmationDeliveryService) extends Actor {
+class ConfirmationActor @Inject()(confirmationRepo: ConfirmationRepo[Future], notifyService: NotifyService[Future]) extends Actor {
 
   /**
     * Use the execution context, and hence the thread pool, for this actor for scheduling
     * the poll events and for making the network calls to deliver notifications.
     */
   implicit val ec = context.dispatcher
+
+  val deliveryService = new ConfirmationDeliveryServiceImpl(confirmationRepo, notifyService)
 
   Logger.debug(s"ConfirmationActor started")
   Logger.debug(s"dispatcher is ${context.dispatcher}")

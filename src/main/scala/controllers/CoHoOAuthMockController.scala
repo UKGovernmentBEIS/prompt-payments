@@ -27,14 +27,15 @@ import config.PageConfig
 import models.CompaniesHouseId
 import org.joda.time.LocalDateTime
 import play.api.mvc.{Action, Controller}
-import services.{CompanyAuthService, CompanySearchService, OAuthToken, SessionService}
+import repos.SessionRepo
+import services.{CompanyAuthService, CompanySearchService, OAuthToken}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class CoHoOAuthMockController @Inject()(
-                                         companySearch: CompanySearchService,
-                                         companyAuth: CompanyAuthService,
-                                         sessionService: SessionService,
+                                         companySearch: CompanySearchService[Future],
+                                         companyAuth: CompanyAuthService[Future],
+                                         sessionService: SessionRepo[Future],
                                          SessionAction: SessionAction,
                                          val pageConfig: PageConfig)
                                        (implicit ec: ExecutionContext) extends Controller with PageHelper {
@@ -46,7 +47,6 @@ class CoHoOAuthMockController @Inject()(
   def postLogin(companiesHouseId: CompaniesHouseId) = Action { request => Redirect(controllers.routes.CoHoOAuthMockController.authCode(companiesHouseId)) }
 
   def authCode(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>
-
     companySearch.find(companiesHouseId).map {
       case Some(co) =>
         Ok(views.html.oauthMock.mockCohoAuthCode(companiesHouseId, co.companyName))

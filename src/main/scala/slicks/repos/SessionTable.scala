@@ -25,7 +25,7 @@ import dbrows.SessionRow
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsObject, _}
-import services.{SessionId, SessionService}
+import repos.{SessionId, SessionRepo}
 import slicks.DBBinding
 import slicks.helpers.RowBuilders
 import slicks.modules.SessionModule
@@ -35,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SessionTable @Inject()(val dbConfigProvider: DatabaseConfigProvider, timeSource: TimeSource, @Named("session timeout") sessionTimeoutInMinutes: Int)(implicit ec: ExecutionContext)
   extends DBBinding
-    with SessionService
+    with SessionRepo[Future]
     with SessionModule
     with PgDateSupportJoda
     with PgPlayJsonSupport

@@ -16,15 +16,22 @@
  */
 
 import actors.ConfirmationActor
-import com.google.inject.AbstractModule
+import cats.arrow.FunctionK
 import com.google.inject.name.Names
+import com.google.inject.{AbstractModule, TypeLiteral}
 import config._
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{Configuration, Environment, Logger}
+import repos.SessionCleaner
 import services._
 import services.live.{CompaniesHouseAuth, CompaniesHouseSearch, NotifyServiceImpl}
 import services.mocks.{MockCompanyAuth, MockCompanySearch, MockNotify}
+import slick.dbio.DBIO
 import slicks.modules.DB
+import slicks.repos.EvalDB
+import utils.EvalFuture
+
+import scala.concurrent.Future
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule with AkkaGuiceSupport {
   override def configure(): Unit = {
@@ -34,30 +41,33 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
     config.companiesHouse match {
       case Some(ch) =>
         bind(classOf[CompaniesHouseConfig]).toInstance(ch)
-        bind(classOf[CompanySearchService]).to(classOf[CompaniesHouseSearch])
+        bind(new TypeLiteral[CompanySearchService[Future]] {}).to(classOf[CompaniesHouseSearch])
       case None =>
         Logger.debug("Wiring in Company Search Mock")
-        bind(classOf[CompanySearchService]).to(classOf[MockCompanySearch])
+        bind(new TypeLiteral[CompanySearchService[Future]] {}).to(classOf[MockCompanySearch])
     }
 
     config.oAuth match {
       case Some(o) =>
         bind(classOf[OAuthConfig]).toInstance(o)
-        bind(classOf[CompanyAuthService]).to(classOf[CompaniesHouseAuth])
+        bind(new TypeLiteral[CompanyAuthService[Future]] {}).to(classOf[CompaniesHouseAuth])
       case None =>
         Logger.debug("Wiring in Company Auth Mock")
-        bind(classOf[CompanyAuthService]).to(classOf[MockCompanyAuth])
+        bind(new TypeLiteral[CompanyAuthService[Future]] {}).to(classOf[MockCompanyAuth])
     }
 
     config.notifyService match {
       case Some(n) =>
         bind(classOf[NotifyConfig]).toInstance(n)
-        bind(classOf[NotifyService]).to(classOf[NotifyServiceImpl])
+        bind(new TypeLiteral[NotifyService[Future]] {}).to(classOf[NotifyServiceImpl])
 
       case None =>
         Logger.debug("Wiring in Notify Mock")
-        bind(classOf[NotifyService]).to(classOf[MockNotify])
+        bind(new TypeLiteral[NotifyService[Future]] {}).to(classOf[MockNotify])
     }
+
+    bind(new TypeLiteral[FunctionK[DBIO, Future]] {}).to(classOf[EvalDB])
+    bind(new TypeLiteral[FunctionK[Future, Future]] {}).to(classOf[EvalFuture])
 
     bind(classOf[Int])
       .annotatedWith(Names.named("session timeout"))

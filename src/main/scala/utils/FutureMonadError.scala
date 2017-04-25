@@ -15,23 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package services
+package utils
 
-import models.CompaniesHouseId
+import javax.inject.Inject
 
-trait CompanyAuthService[F[_]] {
-  def authoriseUrl(companiesHouseId: CompaniesHouseId): String
+import cats.MonadError
+import cats.instances.future._
 
-  def convertCode(code: String): F[OAuthToken]
+import scala.concurrent.{ExecutionContext, Future}
 
-  def refreshAccessToken(oAuthToken: OAuthToken): F[OAuthToken]
+class FutureMonadError @Inject()(implicit ec: ExecutionContext) extends MonadError[Future, Throwable] {
+  val fe = catsStdInstancesForFuture
 
-  def authoriseParams(companiesHouseId: CompaniesHouseId): Map[String, Seq[String]]
+  override def flatMap[A, B](fa: Future[A])(f: (A) => Future[B]) = fe.flatMap(fa)(f)
 
-  def isInScope(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Boolean]
+  override def tailRecM[A, B](a: A)(f: (A) => Future[Either[A, B]]) = fe.tailRecM(a)(f)
 
-  def emailAddress(companiesHouseId: CompaniesHouseId, oAuthToken: OAuthToken): F[Option[String]]
+  override def raiseError[A](e: Throwable) = fe.raiseError(e)
 
-  def targetScope(companiesHouseId: CompaniesHouseId): String
+  override def handleErrorWith[A](fa: Future[A])(f: (Throwable) => Future[A]) = fe.handleErrorWith(fa)(f)
+
+  override def pure[A](x: A) = fe.pure(x)
 }
-

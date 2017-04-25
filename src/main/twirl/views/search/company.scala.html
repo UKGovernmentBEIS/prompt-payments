@@ -1,6 +1,7 @@
 @import org.joda.time.format.DateTimeFormatter
-@import services.{CompanyDetail, FiledReport, PagedResults}
+@import services.{CompanyDetail, PagedResults}
 
+@import repos.FiledReport
 @(item: CompanyDetail, reports: PagedResults[FiledReport], pageLink: Int => String, df: DateTimeFormatter)
 
 <div id="contentStart" class="scannable-wrapper">

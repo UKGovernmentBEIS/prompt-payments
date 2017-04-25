@@ -21,8 +21,8 @@ import uk.gov.service.notify.SendEmailResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait NotifyService {
-  def sendEmail(recipient: String, params: Map[String, String])(implicit ec:ExecutionContext): Future[SendEmailResponse]
+trait NotifyService[F[_]] {
+  def sendEmail(recipient: String, params: Map[String, String])(implicit ec:ExecutionContext): F[SendEmailResponse]
 }
 
 

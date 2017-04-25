@@ -17,32 +17,35 @@
 
 package controllers
 
+import cats.instances.list._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import cats.syntax.traverse._
+import cats.{Monad, ~>}
 import models.CompaniesHouseId
 import play.twirl.api.Html
-import services.{CompanySearchResult, CompanySearchService, PagedResults, ReportService}
+import repos.ReportRepo
+import services.{CompanySearchResult, CompanySearchService, PagedResults}
 
-import scala.concurrent.{ExecutionContext, Future}
+trait SearchHelper[F[_], DbEffect[_]] {
+  implicit val monadF: Monad[F]
+  implicit val evalDb: DbEffect ~> F
 
-trait SearchHelper {
-  def companySearch: CompanySearchService
+  def companySearch: CompanySearchService[F]
 
-  def reportService: ReportService
-
-  implicit def ec: ExecutionContext
+  def reportRepo: ReportRepo[DbEffect]
 
   type ResultsPageFunction = (String, Option[PagedResults[CompanySearchResult]], Map[CompaniesHouseId, Int]) => Html
 
-  def doSearch(query: Option[String], pageNumber: Option[Int], itemsPerPage: Option[Int], resultsPage: ResultsPageFunction) = {
+  def doSearch(query: Option[String], pageNumber: Option[Int], itemsPerPage: Option[Int], resultsPage: ResultsPageFunction): F[Html] = {
     query match {
       case Some(q) => companySearch.searchCompanies(q, pageNumber.getOrElse(1), itemsPerPage.getOrElse(25)).flatMap { results =>
-        val countsF = results.items.map { result =>
-          reportService.byCompanyNumber(result.companiesHouseId).map(rs => (result.companiesHouseId, rs.count(_.isFiled)))
-        }
-
-        Future.sequence(countsF).map(counts => resultsPage(q, Some(results), Map(counts: _*)))
+        results.items.toList.traverse { result =>
+          evalDb(reportRepo.byCompanyNumber(result.companiesHouseId)).map(rs => (result.companiesHouseId, rs.count(_.isFiled)))
+        }.map(counts => resultsPage(q, Some(results), Map(counts: _*)))
       }
 
-      case None => Future.successful(resultsPage("", None, Map.empty))
+      case None => monadF.pure(resultsPage("", None, Map.empty))
     }
   }
 }
