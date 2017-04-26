@@ -1,6 +1,6 @@
-@(name: String, id: models.CompaniesHouseId, form: Form[CoHoCodeController.CodeOption] = CoHoCodeController.emptyForm)(implicit messages: MessagesApi, lang: Lang)
+@(name: String, id: models.CompaniesHouseId, form: Form[CoHoCodeControllerGen.CodeOption] = CoHoCodeControllerGen.emptyForm)(implicit messages: MessagesApi, lang: Lang)
 
-    @import controllers.CoHoCodeController.CodeOption.{Colleague, Register}
+    @import controllers.CoHoCodeControllerGen.CodeOption.{Colleague, Register}
 
 <div id="contentStart">
     @shared._errorBox(form)

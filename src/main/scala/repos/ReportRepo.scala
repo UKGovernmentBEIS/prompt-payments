@@ -64,6 +64,8 @@ trait ReportRepo[F[_]] {
 
   def byCompanyNumber(companiesHouseId: CompaniesHouseId): F[Seq[Report]]
 
+  def countFiledReports(companiesHouseId: CompaniesHouseId): F[Int]
+
   def list(cutoffDate: LocalDate): Publisher[FiledReport]
 
   /**

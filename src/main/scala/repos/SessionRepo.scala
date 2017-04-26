@@ -87,5 +87,8 @@ trait SessionRepo[F[_]] {
   */
 @Singleton
 class SessionCleaner @Inject()(sessionService: SessionRepo[Future], system: ActorSystem)(implicit ec: ExecutionContext) {
-  system.scheduler.schedule(10 seconds, 30 seconds)(sessionService.removeExpired())
+  val cancellable = system.scheduler.schedule(10 seconds, 30 seconds) {
+    sessionService.removeExpired()
+    ()
+  }
 }

@@ -20,6 +20,7 @@ import cats.arrow.FunctionK
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
 import config._
+import controllers.{SearchHelper, SearchHelperImpl}
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{Configuration, Environment, Logger}
 import repos.SessionCleaner
@@ -66,6 +67,7 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
         bind(new TypeLiteral[NotifyService[Future]] {}).to(classOf[MockNotify])
     }
 
+    bind(new TypeLiteral[SearchHelper[Future]]{}).to(classOf[SearchHelperImpl])
     bind(new TypeLiteral[FunctionK[DBIO, Future]] {}).to(classOf[EvalDB])
     bind(new TypeLiteral[FunctionK[Future, Future]] {}).to(classOf[EvalFuture])
 

@@ -31,7 +31,7 @@ import slicks.DBBinding
 import slicks.helpers.RowBuilders
 import slicks.modules.{ConfirmationModule, ReportModule}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
   extends DBBinding
@@ -64,9 +64,13 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
 
   val reportByCoNoC = Compiled(reportByCoNoQ _)
 
-  def byCompanyNumber(companiesHouseId: CompaniesHouseId): DBIO[Seq[Report]] =  {
+  def byCompanyNumber(companiesHouseId: CompaniesHouseId): DBIO[Seq[Report]] =
     reportByCoNoC(companiesHouseId).result.map(_.map(Report.tupled))
-  }
+
+  def filedReportsByCoNoQ(id: Rep[CompaniesHouseId]) = filedReportQuery.filter(_._1.companyId === id)
+
+  override def countFiledReports(companiesHouseId: CompaniesHouseId): DBIO[Int] =
+    filedReportsByCoNoQ(companiesHouseId).countDistinct.result
 
   /**
     * Code to adjust fetchSize on Postgres driver taken from:

@@ -17,7 +17,7 @@
 
 package controllers
 
-import cats.{Monad, MonadError, ~>}
+import cats.{Applicative, Monad, MonadError, ~>}
 import config.PageConfig
 import models.CompaniesHouseId
 import play.api.data.Forms.single
@@ -25,27 +25,20 @@ import play.api.data.{Form, FormError, Forms}
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Controller, RequestHeader, Result}
 import play.twirl.api.Html
-import repos.ReportRepo
 import services.{CompanyAuthService, CompanySearchService}
 import utils.AdjustErrors
 
 import scala.concurrent.Future
 
-class CoHoCodeController[F[_], DbEffect[_]](companyAuth: CompanyAuthService[F],
-                                            val companySearch: CompanySearchService[F],
-                                            val reportRepo: ReportRepo[DbEffect],
-                                            val pageConfig: PageConfig,
-                                            val evalDb: DbEffect ~> F,
-                                            evalF: F ~> Future
-                                           )(implicit val monadF: MonadError[F, Throwable],
-                                             dbEffectMonad: Monad[DbEffect],
-                                             messages: MessagesApi)
-  extends Controller
-    with PageHelper
-    with SearchHelper[F, DbEffect]
-    with CompanyHelper[F] {
+class CoHoCodeControllerGen[F[_], DbEffect[_] : Monad](companyAuth: CompanyAuthService[F],
+                                                       val companySearch: CompanySearchService[F],
+                                                       val pageConfig: PageConfig,
+                                                       val evalDb: DbEffect ~> F,
+                                                       evalF: F ~> Future
+                                                      )(implicit monadF: MonadError[F, Throwable], messages: MessagesApi)
+  extends Controller with PageHelper with CompanyHelper[F] {
 
-  import CoHoCodeController._
+  import CoHoCodeControllerGen._
   import views.html.{report => pages}
 
   private def codePage(companiesHouseId: CompaniesHouseId, form: Form[CodeOption] = emptyForm, foundResult: Html => Result = Ok(_))
@@ -56,15 +49,17 @@ class CoHoCodeController[F[_], DbEffect[_]](companyAuth: CompanyAuthService[F],
 
   def code(companiesHouseId: CompaniesHouseId) = Action.async(implicit request => evalF(codePage(companiesHouseId)))
 
-
   def codeOptions(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>
     evalF {
-      emptyForm.bindFromRequest().fold(errs => codePage(companiesHouseId, errs, BadRequest(_)), c => implicitly[Monad[F]].pure(resultFor(c, companiesHouseId)))
+      emptyForm.bindFromRequest().fold(
+        errs => codePage(companiesHouseId, errs, BadRequest(_)),
+        c => implicitly[Applicative[F]].pure(resultFor(c, companiesHouseId))
+      )
     }
   }
 }
 
-object CoHoCodeController {
+object CoHoCodeControllerGen {
 
   import enumeratum.EnumEntry.Lowercase
   import enumeratum._

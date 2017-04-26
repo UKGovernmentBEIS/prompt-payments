@@ -23,7 +23,6 @@ import cats.instances.future._
 import cats.~>
 import config.PageConfig
 import play.api.i18n.MessagesApi
-import repos.ReportRepo
 import services.{CompanyAuthService, CompanySearchService}
 import slick.dbio.DBIO
 import slicks.repos.DBIOMonad._
@@ -32,12 +31,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CoHoCodeControllerImpl @Inject()(companyAuth: CompanyAuthService[Future],
                                        companySearch: CompanySearchService[Future],
-                                       reportRepo: ReportRepo[DBIO],
                                        pageConfig: PageConfig,
                                        evalDb: DBIO ~> Future,
                                        evalF: Future ~> Future
                                       )(implicit ec: ExecutionContext, messagesApi: MessagesApi)
-  extends CoHoCodeController[Future, DBIO](companyAuth, companySearch, reportRepo, pageConfig, evalDb, evalF)
+  extends CoHoCodeControllerGen[Future, DBIO](companyAuth, companySearch, pageConfig, evalDb, evalF)
 
 
 
