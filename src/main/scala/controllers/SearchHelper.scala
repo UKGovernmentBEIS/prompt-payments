@@ -59,10 +59,10 @@ class SearchHelperGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchSer
     }
   }
 
-  private def searchResults(pageNumber: Option[Int], itemsPerPage: Option[Int], q: String): F[PagedResults[CompanySearchResult]] =
+  private[controllers] def searchResults(pageNumber: Option[Int], itemsPerPage: Option[Int], q: String): F[PagedResults[CompanySearchResult]] =
     companySearch.searchCompanies(q, pageNumber.getOrElse(1), itemsPerPage.getOrElse(25))
 
-  private def countReports(companiesHouseId: CompaniesHouseId): F[Int] =
+  private[controllers] def countReports(companiesHouseId: CompaniesHouseId): F[Int] =
     evalDb(reportRepo.countFiledReports(companiesHouseId))
 }
 
