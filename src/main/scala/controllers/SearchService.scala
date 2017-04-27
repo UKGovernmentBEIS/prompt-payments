@@ -28,20 +28,20 @@ import cats.{Applicative, Monad, ~>}
 import models.CompaniesHouseId
 import play.twirl.api.Html
 import repos.ReportRepo
-import services.{CompanySearchResult, CompanySearchService, PagedResults}
+import services._
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SearchHelper[F[_]] {
+trait SearchService[F[_]] {
   type ResultsPageFunction = (String, Option[PagedResults[CompanySearchResult]], Map[CompaniesHouseId, Int]) => Html
 
-  def doSearch(query: Option[String], pageNumber: Option[Int], itemsPerPage: Option[Int], resultsPage: ResultsPageFunction): F[Html]
+  def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize, resultsPage: ResultsPageFunction): F[Html]
 }
 
-class SearchHelperGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
-  extends SearchHelper[F] {
-  override def doSearch(query: Option[String], pageNumber: Option[Int], itemsPerPage: Option[Int], resultsPage: ResultsPageFunction): F[Html] = {
+class SearchServiceGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
+  extends SearchService[F] {
+  override def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize, resultsPage: ResultsPageFunction): F[Html] = {
     query match {
       case Some(q) => buildResults(pageNumber, itemsPerPage, q).map {
         case (results, counts) => resultsPage(q, Some(results), counts)
@@ -51,7 +51,7 @@ class SearchHelperGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchSer
     }
   }
 
-  private def buildResults(pageNumber: Option[Int], itemsPerPage: Option[Int], q: String): F[(PagedResults[CompanySearchResult], Map[CompaniesHouseId, Int])] = {
+  private[controllers] def buildResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[(PagedResults[CompanySearchResult], Map[CompaniesHouseId, Int])] = {
     searchResults(pageNumber, itemsPerPage, q).flatMap { results =>
       results.items.map(_.companiesHouseId).toList
         .traverse(id => countReports(id).map(id -> _))
@@ -59,12 +59,12 @@ class SearchHelperGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchSer
     }
   }
 
-  private[controllers] def searchResults(pageNumber: Option[Int], itemsPerPage: Option[Int], q: String): F[PagedResults[CompanySearchResult]] =
-    companySearch.searchCompanies(q, pageNumber.getOrElse(1), itemsPerPage.getOrElse(25))
+  private[controllers] def searchResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[PagedResults[CompanySearchResult]] =
+    companySearch.searchCompanies(q, pageNumber, itemsPerPage)
 
   private[controllers] def countReports(companiesHouseId: CompaniesHouseId): F[Int] =
     evalDb(reportRepo.countFiledReports(companiesHouseId))
 }
 
-class SearchHelperImpl @Inject()(companySearch: CompanySearchService[Future], reportRepo: ReportRepo[DBIO], evalDb: DBIO ~> Future)(implicit ec: ExecutionContext)
-  extends SearchHelperGen[Future, DBIO](companySearch, reportRepo, evalDb)(catsStdInstancesForFuture)
+class SearchServiceImpl @Inject()(companySearch: CompanySearchService[Future], reportRepo: ReportRepo[DBIO], evalDb: DBIO ~> Future)(implicit ec: ExecutionContext)
+  extends SearchServiceGen[Future, DBIO](companySearch, reportRepo, evalDb)(catsStdInstancesForFuture)

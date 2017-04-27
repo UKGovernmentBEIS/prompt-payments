@@ -43,18 +43,18 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ReportController @Inject()(
                                   companyAuth: CompanyAuthService[Future],
-                                  searchHelper: SearchHelper[Future],
+                                  searchService: SearchService[Future],
                                   companySearch: CompanySearchService[Future],
                                   reportRepo: ReportRepo[DBIO],
                                   pageConfig: PageConfig,
                                   evalDb: DBIO ~> Future,
                                   evalF: Future ~> Future
                                 )(implicit ec: ExecutionContext, messages: MessagesApi)
-  extends ReportControllerGen[Future, DBIO](companyAuth, searchHelper, companySearch, reportRepo, pageConfig, evalDb, evalF)
+  extends ReportControllerGen[Future, DBIO](companyAuth, searchService, companySearch, reportRepo, pageConfig, evalDb, evalF)
 
 class ReportControllerGen[F[_], DbEffect[_]](
                                               companyAuth: CompanyAuthService[F],
-                                              searchHelper: SearchHelper[F],
+                                              searchService: SearchService[F],
                                               val companySearch: CompanySearchService[F],
                                               reportRepo: ReportRepo[DbEffect],
                                               val pageConfig: PageConfig,
@@ -83,7 +83,7 @@ class ReportControllerGen[F[_], DbEffect[_]](
     def resultsPage(q: String, results: Option[PagedResults[CompanySearchResult]], countMap: Map[CompaniesHouseId, Int]) =
       page(searchPageTitle)(home, searchHeader, views.html.search.search(q, results, countMap, searchLink, companyLink, pageLink(query, itemsPerPage, _)))
 
-    evalF(searchHelper.doSearch(query, pageNumber, itemsPerPage, resultsPage).map(Ok(_)))
+    evalF(searchService.doSearch(query, PageNumber(pageNumber.getOrElse(1)), PageSize(itemsPerPage.getOrElse(25)), resultsPage).map(Ok(_)))
   }
 
   def start(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>

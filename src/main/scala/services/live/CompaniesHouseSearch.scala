@@ -37,9 +37,9 @@ class CompaniesHouseSearch @Inject()(val ws: WSClient, config: CompaniesHouseCon
 
   def targetScope(companiesHouseId: CompaniesHouseId): String = s"https://api.companieshouse.gov.uk/company/${companiesHouseId.id}"
 
-  override def searchCompanies(search: String, page: Int, itemsPerPage: Int): Future[PagedResults[CompanySearchResult]] = {
+  override def searchCompanies(search: String, page: PageNumber, itemsPerPage: PageSize): Future[PagedResults[CompanySearchResult]] = {
     val s = views.html.helper.urlEncode(search)
-    val startIndex = (page - 1) * itemsPerPage
+    val startIndex = (page.value - 1) * itemsPerPage.value
     val url = s"https://api.companieshouse.gov.uk/search/companies?q=$s&items_per_page=$itemsPerPage&start_index=$startIndex"
     val start = System.currentTimeMillis()
 
@@ -47,7 +47,7 @@ class CompaniesHouseSearch @Inject()(val ws: WSClient, config: CompaniesHouseCon
       val t = System.currentTimeMillis() - start
       Logger.debug(s"Companies house search took ${t}ms")
       val results = resultsPage.items.map(i => CompanySearchResult(i.company_number, i.title, i.address_snippet))
-      PagedResults(results, resultsPage.items_per_page, resultsPage.page_number, resultsPage.total_results)
+      PagedResults(results, PageNumber(resultsPage.page_number), PageSize(resultsPage.items_per_page), resultsPage.total_results)
     }
   }
 

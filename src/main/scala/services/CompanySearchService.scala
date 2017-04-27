@@ -30,7 +30,7 @@ object CompanyDetail extends ValueClassFormats {
 }
 
 trait CompanySearchService[F[_]] {
-  def searchCompanies(search: String, page: Int, itemsPerPage: Int): F[PagedResults[CompanySearchResult]]
+  def searchCompanies(search: String, page: PageNumber, itemsPerPage: PageSize): F[PagedResults[CompanySearchResult]]
 
   def find(companiesHouseId: CompaniesHouseId): F[Option[CompanyDetail]]
 }

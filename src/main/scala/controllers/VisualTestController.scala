@@ -20,7 +20,7 @@ package controllers
 import javax.inject.Inject
 
 import calculator.Calculator
-import config.{PageConfig, ServiceConfig, SurveyMonkeyConfig}
+import config.{PageConfig, ServiceConfig}
 import dbrows._
 import forms.report.{ReportFormModel, ReportReviewModel, Validations}
 import forms.{DateRange, Validations}
@@ -33,7 +33,7 @@ import play.api.mvc.{Action, Controller}
 import play.twirl.api.Html
 import questionnaire._
 import repos.FiledReport
-import services.{CompanyDetail, CompanySearchResult, PagedResults}
+import services._
 import utils.YesNo.Yes
 import utils.{SystemTimeSource, YesNo}
 
@@ -72,12 +72,12 @@ class VisualTestController @Inject()(
     val id = CompaniesHouseId("1234567890")
     val companyName = "ABC Limited"
     val summary = CompanySearchResult(id, companyName, "123 Abc Road")
-    val results = PagedResults(Seq(summary, summary, summary), 25, 1, 100)
+    val results = PagedResults(Seq(summary, summary, summary), PageNumber(1), PageSize(25), 100)
     val searches = Seq(
       html(h1("Publish a report"), views.html.search.search("cod", Some(results), Map(id -> 3), "", _ => "", _ => "")),
       html(h1("Search for a report"), views.html.search.search("cod", Some(results), Map(id -> 3), "", _ => "", _ => ""))
     )
-    val companies = Seq(views.html.search.company(CompanyDetail(id, companyName), PagedResults(Seq(healthyReport, healthyReport, healthyReport), 25, 1, 100), _ => "", df))
+    val companies = Seq(views.html.search.company(CompanyDetail(id, companyName), PagedResults(Seq(healthyReport, healthyReport, healthyReport), PageNumber(1), PageSize(25), 100), _ => "", df))
     val start = Seq(views.html.report.start(companyName, id))
     val signIn = Seq(views.html.report.preLogin(id, Form(single("account" -> Validations.yesNo))))
     val options = Seq(

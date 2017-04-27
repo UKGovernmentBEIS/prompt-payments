@@ -1,21 +1,21 @@
-@(results:services.PagedResults[_] ,pageLink: Int => String)
+@(results:services.PagedResults[_] , pageLink: Int => String)
 
 @if(results.canPage) {
     <div class="paging">
         @if(results.canGoBack) {
-            <a class="page" href="@pageLink(results.pageNumber - 1)">Previous</a>
+            <a class="page" href="@pageLink(results.pageNumber.value - 1)">Previous</a>
         }
 
-        @for(i <- Math.max(0, results.pageNumber - 5) to Math.max(10, results.pageNumber + 5)) {
-            @if(i == results.pageNumber) {
+        @for(i <- Math.max(0, results.pageNumber.value - 5) to Math.max(10, results.pageNumber.value + 5)) {
+            @if(i == results.pageNumber.value) {
                 <span class="page thispage" >@i</span>
             }
-            @if(i != results.pageNumber && results.canGo(i)) {
+            @if(i != results.pageNumber.value && results.canGo(i)) {
                 <a class="page" href="@pageLink(i)">@i</a>
             }
         }
         @if(results.canGoNext) {
-            <a class="page" href="@pageLink(results.pageNumber + 1)">Next</a>
+            <a class="page" href="@pageLink(results.pageNumber.value + 1)">Next</a>
         }
     </div>
 }

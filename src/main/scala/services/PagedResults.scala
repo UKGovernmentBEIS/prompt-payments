@@ -17,24 +17,31 @@
 
 package services
 
-case class PagedResults[T](items: Seq[T], pageSize: Int, pageNumber: Int, totalResults: Int) {
-  val pageCount = (totalResults / pageSize.toDouble).ceil
+case class PageNumber(value: Int) extends AnyVal {
+  def +(i: Int): PageNumber = PageNumber(value + i)
+
+  def -(i: Int): PageNumber = PageNumber(value - i)
+}
+
+case class PageSize(value: Int) extends AnyVal
+
+case class PagedResults[T](items: Seq[T], pageNumber: PageNumber, pageSize: PageSize, totalResults: Int) {
+  val pageCount: Int = (totalResults / pageSize.value.toDouble).ceil.toInt
 
   private def isValidRange(pageNumber: Int) = pageNumber <= pageCount && pageNumber >= 1
 
   def canPage: Boolean = canGoBack || canGoNext
 
-  def canGoBack: Boolean = canGo(pageNumber - 1)
+  def canGoBack: Boolean = canGo(pageNumber.value - 1)
 
-  def canGoNext: Boolean = canGo(pageNumber + 1)
+  def canGoNext: Boolean = canGo(pageNumber.value + 1)
 
   def canGo(n: Int): Boolean = isValidRange(n)
 }
 
-object PagedResults {
-  def empty[T] = PagedResults[T](Seq.empty[T], 0, 0, 0)
 
-  def page[T](items: Seq[T], pageNumber: Int, pageSize: Int = 25): PagedResults[T] = {
-    PagedResults(items.drop((pageNumber - 1) * pageSize).take(pageSize), pageSize, pageNumber, items.length)
+object PagedResults {
+  def page[T](items: Seq[T], pageNumber: PageNumber, pageSize: PageSize): PagedResults[T] = {
+    PagedResults(items.drop((pageNumber.value - 1) * pageSize.value).take(pageSize.value), pageNumber, pageSize, items.length)
   }
 }
