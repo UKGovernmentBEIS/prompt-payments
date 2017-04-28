@@ -56,6 +56,20 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
       counts.get(companyId1).value shouldBe 6
     }
   }
+
+  "SearchService.doSearch" should {
+    "return correct results" in {
+      val (q, ResultsWithCounts(results, counts)) = sut.doSearch(Some(""), PageNumber(1), PageSize(25))(testData)._2
+
+      q shouldBe ""
+      results.value.items shouldBe Seq(detail1)
+      results.value.pageCount shouldBe 1
+      results.value.pageNumber.value shouldBe 1
+      results.value.totalResults shouldBe 1
+
+      counts.get(companyId1).value shouldBe 6
+    }
+  }
 }
 
 object SearchServiceGenTest {
