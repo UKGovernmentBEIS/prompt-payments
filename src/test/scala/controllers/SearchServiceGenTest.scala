@@ -52,27 +52,17 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
     }
   }
 
-  "SearchService.buildResults" should {
-    "return correct results" in {
-      val ResultsWithCounts(results, counts) = sut.buildResults(page1, size25, emptySearchString)(testData1)._2
-      results.value shouldBe PagedResults(Seq(detail1), page1, size25, 1)
-      counts.get(companyId1).value shouldBe 6
-    }
-  }
-
   "SearchService.doSearch" should {
     "return correct results when query string is empty for one company" in {
-      val (q, ResultsWithCounts(results, counts)) = sut.doSearch(Some(emptySearchString), page1, size25)(testData1)._2
+      val ResultsWithCounts(results, counts) = sut.doSearch(emptySearchString, page1, size25)(testData1)._2
 
-      q shouldBe emptySearchString
       results.value shouldBe PagedResults(Seq(detail1), page1, size25, 1)
       counts.get(companyId1).value shouldBe 6
     }
 
-    "return correct results when query string is empty for two companies" in {
-      val (dataOut, (q, ResultsWithCounts(results, counts))) = sut.doSearch(Some(emptySearchString), page1, size25)(testData2)
+    "ensure evalDb is called only once when there are multiple companies in the results" in {
+      val (dataOut, ResultsWithCounts(results, counts)) = sut.doSearch(emptySearchString, page1, size25)(testData2)
 
-      q shouldBe emptySearchString
       results.value shouldBe PagedResults(Seq(detail1, detail2), page1, size25, 2)
       counts.get(companyId1).value shouldBe 6
       counts.get(companyId2).value shouldBe 3
@@ -83,14 +73,6 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
       // ...but the db calls should have been merged into one session so `evalDb` should only
       // be called once.
       dataOut.dbData.evalDbCallCount shouldBe 1
-    }
-
-    "return correct results when query string is None" in {
-      val (q, ResultsWithCounts(results, counts)) = sut.doSearch(None, page1, size25)(testData1)._2
-
-      q shouldBe emptySearchString
-      results shouldBe None
-      counts shouldBe Map()
     }
   }
 }

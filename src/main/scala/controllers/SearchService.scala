@@ -37,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait SearchService[F[_]] {
   type ResultsPageFunction = (String, Option[PagedResults[CompanySearchResult]], Map[CompaniesHouseId, Int]) => Html
 
-  def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)]
+  def doSearch(query: String, pageNumber: PageNumber, itemsPerPage: PageSize): F[ResultsWithCounts]
 }
 
 case class ResultsWithCounts(results: Option[PagedResults[CompanySearchResult]], counts: Map[CompaniesHouseId, Int])
@@ -48,17 +48,7 @@ object ResultsWithCounts {
 
 class SearchServiceGen[F[_] : Monad, DbEffect[_] : Applicative](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
   extends SearchService[F] {
-  override def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)] = {
-    query match {
-      case Some(q) => buildResults(pageNumber, itemsPerPage, q).map {
-        results => (q, results)
-      }
-
-      case None => implicitly[Applicative[F]].pure(("", ResultsWithCounts.empty))
-    }
-  }
-
-  private[controllers] def buildResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[ResultsWithCounts] = {
+  override def doSearch(q: String, pageNumber: PageNumber, itemsPerPage: PageSize): F[ResultsWithCounts] = {
     searchResults(pageNumber, itemsPerPage, q).flatMap { results =>
       evalDb {
         results.items.map(_.companiesHouseId).toList.traverse(id => countReports(id).map(id -> _))
