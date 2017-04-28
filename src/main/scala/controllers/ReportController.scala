@@ -61,7 +61,9 @@ class ReportControllerGen[F[_], DbEffect[_]](
                                               val evalDb: DbEffect ~> F,
                                               evalF: F ~> Future
                                             )(implicit val monadF: MonadError[F, Throwable],
-                                              dbEffectMonad: Monad[DbEffect], messages: MessagesApi)
+                                              dbEffectMonad: Monad[DbEffect],
+                                              ec: ExecutionContext,
+                                              messages: MessagesApi)
   extends Controller
     with PageHelper
     with CompanyHelper[F] {
@@ -83,7 +85,9 @@ class ReportControllerGen[F[_], DbEffect[_]](
     def resultsPage(q: String, results: Option[PagedResults[CompanySearchResult]], countMap: Map[CompaniesHouseId, Int]) =
       page(searchPageTitle)(home, searchHeader, views.html.search.search(q, results, countMap, searchLink, companyLink, pageLink(query, itemsPerPage, _)))
 
-    evalF(searchService.doSearch(query, PageNumber(pageNumber.getOrElse(1)), PageSize(itemsPerPage.getOrElse(25)), resultsPage).map(Ok(_)))
+    evalF(searchService.doSearch(query, PageNumber(pageNumber.getOrElse(1)), PageSize(itemsPerPage.getOrElse(25)))).map {
+      case (q, rc) => Ok(resultsPage(q, rc.results, rc.counts))
+    }
   }
 
   def start(companiesHouseId: CompaniesHouseId) = Action.async { implicit request =>

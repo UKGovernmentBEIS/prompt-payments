@@ -36,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait SearchService[F[_]] {
   type ResultsPageFunction = (String, Option[PagedResults[CompanySearchResult]], Map[CompaniesHouseId, Int]) => Html
 
-  def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize, resultsPage: ResultsPageFunction): F[Html]
+  def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)]
 }
 
 case class ResultsWithCounts(results: Option[PagedResults[CompanySearchResult]], counts: Map[CompaniesHouseId, Int])
@@ -47,11 +47,7 @@ object ResultsWithCounts {
 
 class SearchServiceGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
   extends SearchService[F] {
-  override def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize, resultsPage: ResultsPageFunction): F[Html] = {
-    queryResults(query, pageNumber, itemsPerPage).map { case (q, rc) => resultsPage(q, rc.results, rc.counts) }
-  }
-
-  private[controllers] def queryResults(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)] = {
+  override def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)] = {
     query match {
       case Some(q) => buildResults(pageNumber, itemsPerPage, q).map {
         results => (q, results)
