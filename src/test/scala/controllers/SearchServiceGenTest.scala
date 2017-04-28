@@ -58,7 +58,7 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
   }
 
   "SearchService.doSearch" should {
-    "return correct results" in {
+    "return correct results when query string is empty" in {
       val (q, ResultsWithCounts(results, counts)) = sut.doSearch(Some(""), PageNumber(1), PageSize(25))(testData)._2
 
       q shouldBe ""
@@ -68,6 +68,14 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
       results.value.totalResults shouldBe 1
 
       counts.get(companyId1).value shouldBe 6
+    }
+
+    "return correct results when query string is None" in {
+      val (q, ResultsWithCounts(results, counts)) = sut.doSearch(None, PageNumber(1), PageSize(25))(testData)._2
+
+      q shouldBe ""
+      results shouldBe None
+      counts shouldBe Map()
     }
   }
 }
