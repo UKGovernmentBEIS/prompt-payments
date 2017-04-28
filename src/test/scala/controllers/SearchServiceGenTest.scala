@@ -23,6 +23,7 @@ import services._
 
 class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues {
 
+  import SearchServiceGenTestData._
   import SearchServiceGenTestSupport._
 
   val sut = new SearchServiceGen[TestF, TestDb](CompanySearchService, repo, evalDb)
