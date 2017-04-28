@@ -69,7 +69,7 @@ object SearchServiceGenTestSupport {
   )
 
 
-  object companySearchService extends CompanySearchService[TestF] {
+  object CompanySearchService extends CompanySearchService[TestF] {
     override def searchCompanies(search: String, page: PageNumber, itemsPerPage: PageSize): TestF[PagedResults[CompanySearchResult]] = {
       s =>
         (s, PagedResults.page(s.searchResults.values.toSeq, page, itemsPerPage))

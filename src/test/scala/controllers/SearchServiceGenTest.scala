@@ -25,18 +25,19 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
 
   import SearchServiceGenTestSupport._
 
-  val sut = new SearchServiceGen[TestF, TestDb](companySearchService, repo, evalDb)
+  val sut = new SearchServiceGen[TestF, TestDb](CompanySearchService, repo, evalDb)
 
   private val page1 = PageNumber(1)
   private val size25 = PageSize(25)
 
+  private val emptySearchString = ""
   "SearchService.searchResults" should {
     "return correct search results with one company" in {
-      sut.searchResults(page1, size25, "")(testData1)._2 shouldBe PagedResults(Seq(detail1), page1, size25, 1)
+      sut.searchResults(page1, size25, emptySearchString)(testData1)._2 shouldBe PagedResults(Seq(detail1), page1, size25, 1)
     }
 
     "return correct search results with two companies" in {
-      val result = sut.searchResults(page1, size25, "")(testData2)._2
+      val result = sut.searchResults(page1, size25, emptySearchString)(testData2)._2
       result shouldBe PagedResults(Seq(detail1, detail2), page1, size25, 2)
     }
   }
@@ -53,7 +54,7 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
 
   "SearchService.buildResults" should {
     "return correct results" in {
-      val ResultsWithCounts(results, counts) = sut.buildResults(page1, size25, "")(testData1)._2
+      val ResultsWithCounts(results, counts) = sut.buildResults(page1, size25, emptySearchString)(testData1)._2
       results.value shouldBe PagedResults(Seq(detail1), page1, size25, 1)
       counts.get(companyId1).value shouldBe 6
     }
@@ -61,17 +62,17 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
 
   "SearchService.doSearch" should {
     "return correct results when query string is empty for one company" in {
-      val (q, ResultsWithCounts(results, counts)) = sut.doSearch(Some(""), page1, size25)(testData1)._2
+      val (q, ResultsWithCounts(results, counts)) = sut.doSearch(Some(emptySearchString), page1, size25)(testData1)._2
 
-      q shouldBe ""
+      q shouldBe emptySearchString
       results.value shouldBe PagedResults(Seq(detail1), page1, size25, 1)
       counts.get(companyId1).value shouldBe 6
     }
 
     "return correct results when query string is empty for two companies" in {
-      val (dataOut, (q, ResultsWithCounts(results, counts))) = sut.doSearch(Some(""), page1, size25)(testData2)
+      val (dataOut, (q, ResultsWithCounts(results, counts))) = sut.doSearch(Some(emptySearchString), page1, size25)(testData2)
 
-      q shouldBe ""
+      q shouldBe emptySearchString
       results.value shouldBe PagedResults(Seq(detail1, detail2), page1, size25, 2)
       counts.get(companyId1).value shouldBe 6
       counts.get(companyId2).value shouldBe 3
@@ -87,7 +88,7 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
     "return correct results when query string is None" in {
       val (q, ResultsWithCounts(results, counts)) = sut.doSearch(None, page1, size25)(testData1)._2
 
-      q shouldBe ""
+      q shouldBe emptySearchString
       results shouldBe None
       counts shouldBe Map()
     }
