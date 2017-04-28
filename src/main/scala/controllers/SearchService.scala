@@ -30,6 +30,7 @@ import play.twirl.api.Html
 import repos.ReportRepo
 import services._
 import slick.dbio.DBIO
+import slicks.repos.DBIOMonad
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,7 +46,7 @@ object ResultsWithCounts {
   val empty = ResultsWithCounts(None, Map.empty)
 }
 
-class SearchServiceGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
+class SearchServiceGen[F[_] : Monad, DbEffect[_] : Applicative](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
   extends SearchService[F] {
   override def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)] = {
     query match {
@@ -59,18 +60,18 @@ class SearchServiceGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchSe
 
   private[controllers] def buildResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[ResultsWithCounts] = {
     searchResults(pageNumber, itemsPerPage, q).flatMap { results =>
-      results.items.map(_.companiesHouseId).toList
-        .traverse(id => countReports(id).map(id -> _))
-        .map(counts => ResultsWithCounts(Some(results), Map(counts: _*)))
+      evalDb {
+        results.items.map(_.companiesHouseId).toList.traverse(id => countReports(id).map(id -> _))
+      }.map(counts => ResultsWithCounts(Some(results), Map(counts: _*)))
     }
   }
 
   private[controllers] def searchResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[PagedResults[CompanySearchResult]] =
     companySearch.searchCompanies(q, pageNumber, itemsPerPage)
 
-  private[controllers] def countReports(companiesHouseId: CompaniesHouseId): F[Int] =
-    evalDb(reportRepo.countFiledReports(companiesHouseId))
+  private[controllers] def countReports(companiesHouseId: CompaniesHouseId): DbEffect[Int] =
+    reportRepo.countFiledReports(companiesHouseId)
 }
 
 class SearchServiceImpl @Inject()(companySearch: CompanySearchService[Future], reportRepo: ReportRepo[DBIO], evalDb: DBIO ~> Future)(implicit ec: ExecutionContext)
-  extends SearchServiceGen[Future, DBIO](companySearch, reportRepo, evalDb)(catsStdInstancesForFuture)
+  extends SearchServiceGen[Future, DBIO](companySearch, reportRepo, evalDb)(catsStdInstancesForFuture, DBIOMonad.dbioMonadInstance)
