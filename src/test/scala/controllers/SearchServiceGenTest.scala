@@ -47,11 +47,11 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
 
   "SearchService.buildResults" should {
     "return correct results" in {
-      val (results, counts) = sut.buildResults(PageNumber(1), PageSize(25), "")(testData)._2
-      results.items shouldBe Seq(detail1)
-      results.pageCount shouldBe 1
-      results.pageNumber.value shouldBe 1
-      results.totalResults shouldBe 1
+      val ResultsWithCounts(results, counts) = sut.buildResults(PageNumber(1), PageSize(25), "")(testData)._2
+      results.value.items shouldBe Seq(detail1)
+      results.value.pageCount shouldBe 1
+      results.value.pageNumber.value shouldBe 1
+      results.value.totalResults shouldBe 1
 
       counts.get(companyId1).value shouldBe 6
     }

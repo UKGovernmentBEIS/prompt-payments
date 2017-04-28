@@ -39,23 +39,33 @@ trait SearchService[F[_]] {
   def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize, resultsPage: ResultsPageFunction): F[Html]
 }
 
+case class ResultsWithCounts(results: Option[PagedResults[CompanySearchResult]], counts: Map[CompaniesHouseId, Int])
+
+object ResultsWithCounts {
+  val empty = ResultsWithCounts(None, Map.empty)
+}
+
 class SearchServiceGen[F[_] : Monad, DbEffect[_]](companySearch: CompanySearchService[F], reportRepo: ReportRepo[DbEffect], evalDb: DbEffect ~> F)
   extends SearchService[F] {
   override def doSearch(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize, resultsPage: ResultsPageFunction): F[Html] = {
+    queryResults(query, pageNumber, itemsPerPage).map { case (q, rc) => resultsPage(q, rc.results, rc.counts) }
+  }
+
+  private[controllers] def queryResults(query: Option[String], pageNumber: PageNumber, itemsPerPage: PageSize): F[(String, ResultsWithCounts)] = {
     query match {
       case Some(q) => buildResults(pageNumber, itemsPerPage, q).map {
-        case (results, counts) => resultsPage(q, Some(results), counts)
+        results => (q, results)
       }
 
-      case None => implicitly[Applicative[F]].pure(resultsPage("", None, Map.empty))
+      case None => implicitly[Applicative[F]].pure(("", ResultsWithCounts.empty))
     }
   }
 
-  private[controllers] def buildResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[(PagedResults[CompanySearchResult], Map[CompaniesHouseId, Int])] = {
+  private[controllers] def buildResults(pageNumber: PageNumber, itemsPerPage: PageSize, q: String): F[ResultsWithCounts] = {
     searchResults(pageNumber, itemsPerPage, q).flatMap { results =>
       results.items.map(_.companiesHouseId).toList
         .traverse(id => countReports(id).map(id -> _))
-        .map(counts => (results, Map(counts: _*)))
+        .map(counts => ResultsWithCounts(Some(results), Map(counts: _*)))
     }
   }
 
