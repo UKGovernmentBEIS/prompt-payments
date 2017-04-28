@@ -45,6 +45,8 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
   "SearchService.countReports" should {
     "return correct report count" in {
       sut.countReports(companyId1)(testData1.dbData)._2 shouldBe 6
+      sut.countReports(companyId1)(testData2.dbData)._2 shouldBe 6
+      sut.countReports(companyId2)(testData2.dbData)._2 shouldBe 3
     }
 
     "return report count of 0 when company id is not found" in {
