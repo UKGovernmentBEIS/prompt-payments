@@ -18,16 +18,29 @@
 package controllers
 
 import cats.arrow.FunctionK
-import cats.{Applicative, Monad, ~>}
+import cats.{Monad, ~>}
 import models.CompaniesHouseId
 import services._
 
 object SearchServiceGenTestSupport {
 
- import SearchServiceGenTestData._
+  import SearchServiceGenTestData._
 
-  type TestF[A] = TestData => (TestData, A)
-  type TestDb[A] = TestDbData => (TestDbData, A)
+  // Accept data of type D and return a (possibly updated) instance of D and a value A
+  type TestData[D, A] = D => (D, A)
+  type TestF[A] = TestData[SearchTestData, A]
+  type TestDb[A] = TestData[TestDbData, A]
+
+  implicit def monadD[D] : Monad[TestData[D, ?]] = new Monad[TestData[D, ?]] {
+    override def pure[A](a: A): TestData[D, A] = d => (d, a)
+
+    override def flatMap[A, B](fa: TestData[D, A])(f: (A) => TestData[D, B]): TestData[D, B] = {
+      val fm = fa.andThen { case (td, a) => f(a)(td) }
+      d => fm(d)
+    }
+
+    override def tailRecM[A, B](a: A)(f: (A) => TestData[D, Either[A, B]]): TestData[D, B] = ???
+  }
 
   val evalDb: TestDb ~> TestF = new FunctionK[TestDb, TestF] {
     override def apply[A](fa: TestDb[A]): TestF[A] = {
@@ -35,29 +48,6 @@ object SearchServiceGenTestSupport {
         val (dbData, a) = fa(testData.dbData)
 
         (testData.copy(dbData = dbData.copy(evalDbCallCount = dbData.evalDbCallCount + 1)), a)
-    }
-  }
-
-  implicit val monadF: Monad[TestF] = new Monad[TestF] {
-    override def flatMap[A, B](fa: TestF[A])(f: (A) => TestF[B]): TestF[B] = { testData =>
-      val (td2, a) = fa(testData)
-      f(a)(td2)
-    }
-
-    override def tailRecM[A, B](a: A)(f: (A) => TestF[Either[A, B]]): TestF[B] = ???
-
-    override def pure[A](a: A): TestF[A] = s => (s, a)
-  }
-
-  implicit val applicativeDb: Applicative[TestDb] = new Applicative[TestDb] {
-    override def pure[A](a: A): TestDb[A] = testData => (testData, a)
-
-    override def ap[A, B](ff: TestDb[(A) => B])(fa: TestDb[A]): TestDb[B] = {
-      dbData =>
-        val (dataA, a) = fa(dbData)
-        val (dataB, fb) = ff(dataA)
-
-        (dataB, fb(a))
     }
   }
 
@@ -79,4 +69,5 @@ object SearchServiceGenTestSupport {
         (testData.copy(countFiledCallCount = testData.countFiledCallCount + 1), testData.reportCounts.getOrElse(companiesHouseId, 0))
     }
   }
+
 }

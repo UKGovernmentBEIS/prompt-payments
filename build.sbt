@@ -18,6 +18,8 @@ enablePlugins(BuildInfoPlugin)
 
 val SLICK_PG_VERSION = "0.14.3"
 
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+
 val slickpgDependencies = Seq(
   "com.github.tminglei" %% "slick-pg" % SLICK_PG_VERSION,
   "com.github.tminglei" %% "slick-pg_play-json" % SLICK_PG_VERSION,
