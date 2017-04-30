@@ -29,7 +29,7 @@ object SearchServiceGenTestSupport {
   // Accept data of type D and return a (possibly updated) instance of D and a value A
   type TestData[D, A] = D => (D, A)
   type TestF[A] = TestData[SearchTestData, A]
-  type TestDb[A] = TestData[TestDbData, A]
+  type TestDb[A] = TestData[RepoTestData, A]
 
   implicit def monadD[D] : Monad[TestData[D, ?]] = new Monad[TestData[D, ?]] {
     override def pure[A](a: A): TestData[D, A] = d => (d, a)

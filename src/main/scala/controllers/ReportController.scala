@@ -89,7 +89,7 @@ class ReportControllerGen[F[_], DbEffect[_]](
       case None => evalF(monadF.pure(Ok(resultsPage("", None, Map.empty))))
 
       case Some(q) => evalF(searchService.doSearch(q, PageNumber(pageNumber.getOrElse(1)), PageSize(itemsPerPage.getOrElse(25)))).map {
-        rc => Ok(resultsPage(q, rc.results, rc.counts))
+        rc => Ok(resultsPage(q, Some(rc.results), rc.counts))
       }
     }
   }

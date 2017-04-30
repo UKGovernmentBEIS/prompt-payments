@@ -32,41 +32,19 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
   private val size25 = PageSize(25)
 
   private val emptySearchString = ""
-  "SearchService.searchResults" should {
-    "return correct search results with one company" in {
-      sut.searchResults(page1, size25, emptySearchString)(testData1)._2 shouldBe PagedResults(Seq(detail1), page1, size25, 1)
-    }
-
-    "return correct search results with two companies" in {
-      val result = sut.searchResults(page1, size25, emptySearchString)(testData2)._2
-      result shouldBe PagedResults(Seq(detail1, detail2), page1, size25, 2)
-    }
-  }
-
-  "SearchService.countReports" should {
-    "return correct report count" in {
-      sut.countReports(companyId1)(testData1.dbData)._2 shouldBe 6
-      sut.countReports(companyId1)(testData2.dbData)._2 shouldBe 6
-      sut.countReports(companyId2)(testData2.dbData)._2 shouldBe 3
-    }
-
-    "return report count of 0 when company id is not found" in {
-      sut.countReports(CompaniesHouseId("not found"))(testData1.dbData)._2 shouldBe 0
-    }
-  }
 
   "SearchService.doSearch" should {
     "return correct results when query string is empty for one company" in {
       val ResultsWithCounts(results, counts) = sut.doSearch(emptySearchString, page1, size25)(testData1)._2
 
-      results.value shouldBe PagedResults(Seq(detail1), page1, size25, 1)
+      results shouldBe PagedResults(Seq(detail1), page1, size25, 1)
       counts.get(companyId1).value shouldBe 6
     }
 
     "ensure evalDb is called only once when there are multiple companies in the results" in {
       val (dataOut, ResultsWithCounts(results, counts)) = sut.doSearch(emptySearchString, page1, size25)(testData2)
 
-      results.value shouldBe PagedResults(Seq(detail1, detail2), page1, size25, 2)
+      results shouldBe PagedResults(Seq(detail1, detail2), page1, size25, 2)
       counts.get(companyId1).value shouldBe 6
       counts.get(companyId2).value shouldBe 3
 
