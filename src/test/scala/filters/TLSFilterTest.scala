@@ -55,11 +55,12 @@ class TLSFilterTest extends WordSpecLike with Matchers with ScalaFutures {
       val rh = FakeRequest(method, "", Headers(HeaderNames.X_FORWARDED_PROTO -> httpsProto), "")
       TLSFilter.forwardedFromHttps(rh) shouldBe true
     }
-    "be false if X-Forwarded-Proto is present but not 'https'" in {
 
+    "be false if X-Forwarded-Proto is present but not 'https'" in {
       val rh = FakeRequest(method, "", Headers(HeaderNames.X_FORWARDED_PROTO -> notHttpsProto), "")
       TLSFilter.forwardedFromHttps(rh) shouldBe false
     }
+
     "be true if X-Forwarded-Proto is not present" in {
       val rh = FakeRequest(method, "", Headers(), "")
       TLSFilter.forwardedFromHttps(rh) shouldBe false
@@ -74,6 +75,10 @@ class TLSFilterTest extends WordSpecLike with Matchers with ScalaFutures {
   def checkHeader(expected: RequestHeader): RequestHeader => Future[Result] = { actual =>
     actual shouldBe expected
     Future.successful(Results.Ok(""))
+  }
+
+  val shouldNotBeCalled: RequestHeader => Future[Result] = { actual =>
+    fail("should not have been called")
   }
 
   "apply" should {
@@ -95,15 +100,14 @@ class TLSFilterTest extends WordSpecLike with Matchers with ScalaFutures {
       filter.apply(checkHeader(rh))(rh)
     }
 
-    "update the url to https in Prod mode when not already secure" in {
+    "redirect to https in Prod mode when not already secure. Next filter in chain should not be called" in {
       val hostName = "test.com"
       val headers = Headers(HeaderNames.HOST -> hostName)
       val updatedUri = s"$httpsProto://$hostName/test"
-      val expected = FakeRequest(method, updatedUri, headers, "")
 
       val rh = FakeRequest(method, "/test", headers, "")
       val filter = new TLSFilter(Environment(new File(""), this.getClass.getClassLoader, Mode.Prod))
-      val f = filter.apply(checkHeader(expected))(rh)
+      val f = filter.apply(shouldNotBeCalled)(rh)
       f.futureValue shouldBe Results.MovedPermanently(updatedUri)
     }
   }
