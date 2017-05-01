@@ -31,7 +31,7 @@ object SearchServiceGenTestSupport {
   type TestF[A] = TestData[SearchTestData, A]
   type TestDb[A] = TestData[RepoTestData, A]
 
-  implicit def monadD[D] : Monad[TestData[D, ?]] = new Monad[TestData[D, ?]] {
+  implicit def monadD[D]: Monad[TestData[D, ?]] = new Monad[TestData[D, ?]] {
     override def pure[A](a: A): TestData[D, A] = d => (d, a)
 
     override def flatMap[A, B](fa: TestData[D, A])(f: (A) => TestData[D, B]): TestData[D, B] = {
@@ -39,7 +39,12 @@ object SearchServiceGenTestSupport {
       d => fm(d)
     }
 
-    override def tailRecM[A, B](a: A)(f: (A) => TestData[D, Either[A, B]]): TestData[D, B] = ???
+    override def tailRecM[A, B](init: A)(f: (A) => TestData[D, Either[A, B]]): TestData[D, B] = {
+      data => f(init)(data) match {
+        case (d, Right(b)) => (d, b)
+        case (d, Left(a)) => tailRecM(a)(f)(d)
+      }
+    }
   }
 
   val evalDb: TestDb ~> TestF = new FunctionK[TestDb, TestF] {

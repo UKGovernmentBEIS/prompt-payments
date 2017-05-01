@@ -17,7 +17,6 @@
 
 package controllers
 
-import models.CompaniesHouseId
 import org.scalatest.{Matchers, OptionValues, WordSpecLike}
 import services._
 
