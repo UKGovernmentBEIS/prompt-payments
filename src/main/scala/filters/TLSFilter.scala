@@ -28,6 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TLSFilter @Inject()(env: Environment)(implicit val mat: Materializer, ec: ExecutionContext) extends Filter {
 
+  import TLSFilter._
   import play.api.mvc.Results._
 
   override def apply(next: (RequestHeader) => Future[Result])(rh: RequestHeader): Future[Result] = {
@@ -37,7 +38,9 @@ class TLSFilter @Inject()(env: Environment)(implicit val mat: Materializer, ec: 
       Future.successful(MovedPermanently(url))
     }
   }
+}
 
+object TLSFilter {
   def forwardedFromHttps(rh: RequestHeader): Boolean = {
     rh.headers.get("X-Forwarded-Proto") match {
       case Some("https") => true
@@ -45,7 +48,7 @@ class TLSFilter @Inject()(env: Environment)(implicit val mat: Materializer, ec: 
     }
   }
 
-  private def urlFor(rh: RequestHeader): String = {
+  def urlFor(rh: RequestHeader): String = {
     rh.uri.trim match {
       case "" | "/" => s"https://${rh.host}"
       case uri => s"https://${rh.host}$uri"

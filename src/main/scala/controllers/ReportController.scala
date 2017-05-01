@@ -79,7 +79,8 @@ class ReportControllerGen[F[_], DbEffect[_]](
   val searchLink = routes.ReportController.search(None, None, None).url
   val companyLink = { id: CompaniesHouseId => routes.ReportController.start(id).url }
 
-  def pageLink(query: Option[String], itemsPerPage: Option[Int], pageNumber: Int) = routes.ReportController.search(query, Some(pageNumber), itemsPerPage).url
+  def pageLink(query: Option[String], itemsPerPage: Option[Int], pageNumber: Int) =
+    routes.ReportController.search(query, Some(pageNumber), itemsPerPage).url
 
   def search(query: Option[String], pageNumber: Option[Int], itemsPerPage: Option[Int]) = Action.async { implicit request =>
     def resultsPage(q: String, results: Option[PagedResults[CompanySearchResult]], countMap: Map[CompaniesHouseId, Int]) =

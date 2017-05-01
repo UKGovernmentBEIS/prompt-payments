@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % "3.0.1",
   "uk.gov.service.notify" % "notifications-java-client" % "3.1.1-RELEASE",
 
-  "org.scalatest" %% "scalatest" % "3.0.1" % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.4" % Test)
 
 libraryDependencies ++= slickpgDependencies
