@@ -48,17 +48,13 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
 
   val reportByIdC = Compiled(reportByIdQ _)
 
-  def find(id: ReportId): DBIO[Option[Report]] =  {
-    reportByIdC(id).result.headOption.map(_.map(Report.tupled))
-  }
+  def find(id: ReportId): DBIO[Option[Report]] = reportByIdC(id).result.headOption.map(_.map(Report.tupled))
 
   def filedReportByIdQ(id: Rep[ReportId]) = filedReportQuery.filter(_._1.id === id)
 
   val filedReportByIdC = Compiled(filedReportByIdQ _)
 
-  def findFiled(id: ReportId): DBIO[Option[FiledReport]] =  {
-    filedReportByIdC(id).result.headOption.map(_.map(FiledReport.tupled))
-  }
+  def findFiled(id: ReportId): DBIO[Option[FiledReport]] = filedReportByIdC(id).result.headOption.map(_.map(FiledReport.tupled))
 
   def reportByCoNoQ(cono: Rep[CompaniesHouseId]) = reportQuery.filter(_._1.companyId === cono)
 
@@ -91,18 +87,16 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
                        review: ReportReviewModel,
                        confirmationEmailAddress: String,
                        reportUrl: ReportId => String
-                     ): DBIO[ReportId] =  {
+                     ): DBIO[ReportId] = {
     val header = ReportHeaderRow(ReportId(0), companyName, companiesHouseId, new LocalDate(), new LocalDate())
-
-    (reportHeaderTable.returning(reportHeaderTable.map(_.id)) += header).flatMap { reportId =>
-      for {
-        _ <- reportPeriodTable += buildPeriodRow(report, reportId)
-        _ <- paymentTermsTable += buildPaymentTermsRow(report, reportId)
-        _ <- paymentHistoryTable += buildPaymentHistoryRow(report, reportId)
-        _ <- otherInfoTable += buildOtherInfoRow(report, reportId)
-        _ <- filingTable += buildFilingRow(review, reportId, confirmationEmailAddress)
-        _ <- confirmationPendingTable += ConfirmationPendingRow(reportId, confirmationEmailAddress, reportUrl(reportId), 0, None, None, None)
-      } yield reportId
-    }.transactionally
-  }
+    for {
+      reportId <- reportHeaderTable.returning(reportHeaderTable.map(_.id)) += header
+      _ <- reportPeriodTable += buildPeriodRow(report, reportId)
+      _ <- paymentTermsTable += buildPaymentTermsRow(report, reportId)
+      _ <- paymentHistoryTable += buildPaymentHistoryRow(report, reportId)
+      _ <- otherInfoTable += buildOtherInfoRow(report, reportId)
+      _ <- filingTable += buildFilingRow(review, reportId, confirmationEmailAddress)
+      _ <- confirmationPendingTable += ConfirmationPendingRow(reportId, confirmationEmailAddress, reportUrl(reportId), 0, None, None, None)
+    } yield reportId
+  }.transactionally
 }
