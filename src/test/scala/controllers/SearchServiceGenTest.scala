@@ -17,6 +17,7 @@
 
 package controllers
 
+import cats.arrow.FunctionK
 import org.scalatest.{Matchers, OptionValues, WordSpecLike}
 import services._
 
@@ -25,7 +26,9 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
   import SearchServiceGenTestData._
   import SearchServiceGenTestSupport._
 
-  val sut = new SearchServiceGen[TestF, TestDb](CompanySearchService, repo, evalDb)
+  implicit val idF = FunctionK.id[TestF]
+
+  val sut = new SearchServiceGen[TestF, TestF, TestDb](CompanySearchService, repo)
 
   private val page1 = PageNumber(1)
   private val size25 = PageSize(25)

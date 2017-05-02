@@ -19,6 +19,7 @@ package controllers
 
 import javax.inject.Inject
 
+import cats.arrow.FunctionK
 import cats.instances.future._
 import cats.instances.list._
 import cats.syntax.flatMap._
@@ -39,18 +40,33 @@ trait SearchService[F[_]] {
 
 case class ResultsWithCounts(results: PagedResults[CompanySearchResult], counts: Map[CompaniesHouseId, Int])
 
-class SearchServiceGen[F[_] : Monad, DbEffect[_] : Applicative](companySearch: CompanySearchService[F],
-                                                                reportRepo: ReportRepo[DbEffect],
-                                                                evalDb: DbEffect ~> F)
+class SearchServiceGen[F[_] : Monad, RestEffect[_], DbEffect[_] : Applicative](companySearch: CompanySearchService[RestEffect],
+                                                                               reportRepo: ReportRepo[DbEffect])
+                                                                              (implicit evalRest: RestEffect ~> F,
+                                                                               evalDb: DbEffect ~> F)
   extends SearchService[F] {
+
+  def run[H[_], A](h: => H[A])(implicit eval: H ~> F): F[A] = eval(h)
+
   override def doSearch(q: String, pageNumber: PageNumber, itemsPerPage: PageSize): F[ResultsWithCounts] = {
-    companySearch.searchCompanies(q, pageNumber, itemsPerPage).flatMap { results =>
-      evalDb {
-        results.items.toList.traverse(item => reportRepo.countFiledReports(item.companiesHouseId).map(count => item.companiesHouseId -> count))
-      }.map(counts => ResultsWithCounts(results, Map(counts: _*)))
-    }
+    for {
+      results <- run(companySearch.searchCompanies(q, pageNumber, itemsPerPage))
+      counts <- run(countReports(results.items.toList))
+    } yield ResultsWithCounts(results, Map(counts: _*))
+  }
+
+  private def countReports(items: List[CompanySearchResult]): DbEffect[List[(CompaniesHouseId, Int)]] = {
+    items.traverse(item => reportRepo.countFiledReports(item.companiesHouseId).map(count => item.companiesHouseId -> count))
   }
 }
 
-class SearchServiceImpl @Inject()(companySearch: CompanySearchService[Future], reportRepo: ReportRepo[DBIO], evalDb: DBIO ~> Future)(implicit ec: ExecutionContext)
-  extends SearchServiceGen[Future, DBIO](companySearch, reportRepo, evalDb)(catsStdInstancesForFuture, DBIOMonad.dbioMonadInstance)
+class SearchServiceImpl @Inject()(companySearch: CompanySearchService[Future], reportRepo: ReportRepo[DBIO], evalDb: DBIO ~> Future)(
+  implicit ec: ExecutionContext
+)
+  extends SearchServiceGen[Future, Future, DBIO](
+    companySearch,
+    reportRepo)(
+    catsStdInstancesForFuture,
+    DBIOMonad.dbioMonadInstance,
+    FunctionK.id[Future],
+    evalDb)

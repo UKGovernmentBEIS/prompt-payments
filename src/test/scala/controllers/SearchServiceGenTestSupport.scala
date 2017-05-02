@@ -41,13 +41,13 @@ object SearchServiceGenTestSupport {
 
     override def tailRecM[A, B](init: A)(f: (A) => TestData[D, Either[A, B]]): TestData[D, B] = {
       data => f(init)(data) match {
-        case (d, Right(b)) => (d, b)
-        case (d, Left(a)) => tailRecM(a)(f)(d)
-      }
+          case (d, Right(b)) => (d, b)
+          case (d, Left(a)) => tailRecM(a)(f)(d)
+        }
     }
   }
 
-  val evalDb: TestDb ~> TestF = new FunctionK[TestDb, TestF] {
+  implicit val evalDb: TestDb ~> TestF = new FunctionK[TestDb, TestF] {
     override def apply[A](fa: TestDb[A]): TestF[A] = {
       testData =>
         val (dbData, a) = fa(testData.dbData)
