@@ -20,6 +20,7 @@ package controllers
 import cats.arrow.FunctionK
 import cats.{Monad, ~>}
 import models.CompaniesHouseId
+import monocle.macros.GenLens
 import services._
 
 object SearchServiceGenTestSupport {
@@ -40,19 +41,32 @@ object SearchServiceGenTestSupport {
     }
 
     override def tailRecM[A, B](init: A)(f: (A) => TestData[D, Either[A, B]]): TestData[D, B] = {
-      data => f(init)(data) match {
+      data =>
+        f(init)(data) match {
           case (d, Right(b)) => (d, b)
           case (d, Left(a)) => tailRecM(a)(f)(d)
         }
     }
   }
 
+  private val dbDataLens = GenLens[SearchTestData](_.dbData)
+  private val evalDbCountLens = dbDataLens composeLens GenLens[RepoTestData](_.evalDbCallCount)
+  private val countFiledLens = GenLens[RepoTestData](_.countFiledCallCount)
+
   implicit val evalDb: TestDb ~> TestF = new FunctionK[TestDb, TestF] {
     override def apply[A](fa: TestDb[A]): TestF[A] = {
       testData =>
         val (dbData, a) = fa(testData.dbData)
 
-        (testData.copy(dbData = dbData.copy(evalDbCallCount = dbData.evalDbCallCount + 1)), a)
+        val dataOut = dbDataLens.modify(_ => dbData)(testData)
+
+        (evalDbCountLens.modify(_ + 1)(dataOut), a)
+    }
+  }
+
+  object repo extends ReportRepoStub[TestDb] {
+    override def countFiledReports(companiesHouseId: CompaniesHouseId): TestDb[Int] = {
+      dbData => (countFiledLens.modify(_ + 1)(dbData), dbData.reportCounts.getOrElse(companiesHouseId, 0))
     }
   }
 
@@ -67,12 +81,4 @@ object SearchServiceGenTestSupport {
         (s, s.searchResults.get(companiesHouseId).map(r => CompanyDetail(r.companiesHouseId, r.companyName)))
     }
   }
-
-  object repo extends ReportRepoStub[TestDb] {
-    override def countFiledReports(companiesHouseId: CompaniesHouseId): TestDb[Int] = {
-      testData =>
-        (testData.copy(countFiledCallCount = testData.countFiledCallCount + 1), testData.reportCounts.getOrElse(companiesHouseId, 0))
-    }
-  }
-
 }

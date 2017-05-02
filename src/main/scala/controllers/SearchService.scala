@@ -34,11 +34,11 @@ import slicks.repos.DBIOMonad
 
 import scala.concurrent.{ExecutionContext, Future}
 
+case class ResultsWithCounts(results: PagedResults[CompanySearchResult], counts: Map[CompaniesHouseId, Int])
+
 trait SearchService[F[_]] {
   def doSearch(query: String, pageNumber: PageNumber, itemsPerPage: PageSize): F[ResultsWithCounts]
 }
-
-case class ResultsWithCounts(results: PagedResults[CompanySearchResult], counts: Map[CompaniesHouseId, Int])
 
 class SearchServiceGen[F[_] : Monad, RestEffect[_], DbEffect[_] : Applicative](companySearch: CompanySearchService[RestEffect],
                                                                                reportRepo: ReportRepo[DbEffect])
