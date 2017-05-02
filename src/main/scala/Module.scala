@@ -30,7 +30,6 @@ import services.mocks.{MockCompanyAuth, MockCompanySearch, MockNotify}
 import slick.dbio.DBIO
 import slicks.modules.DB
 import slicks.repos.EvalDB
-import utils.EvalFuture
 
 import scala.concurrent.Future
 
@@ -69,7 +68,7 @@ class Module(environment: Environment, configuration: Configuration) extends Abs
 
     bind(new TypeLiteral[SearchService[Future]]{}).to(classOf[SearchServiceImpl])
     bind(new TypeLiteral[FunctionK[DBIO, Future]] {}).to(classOf[EvalDB])
-    bind(new TypeLiteral[FunctionK[Future, Future]] {}).to(classOf[EvalFuture])
+    bind(new TypeLiteral[FunctionK[Future, Future]] {}).toInstance(FunctionK.id[Future])
 
     bind(classOf[Int])
       .annotatedWith(Names.named("session timeout"))
