@@ -56,7 +56,7 @@ class ReportTable @Inject()(val dbConfigProvider: DatabaseConfigProvider)(implic
 
   def findFiled(id: ReportId): DBIO[Option[FiledReport]] = filedReportByIdC(id).result.headOption.map(_.map(FiledReport.tupled))
 
-  def reportByCoNoQ(cono: Rep[CompaniesHouseId]) = reportQuery.filter(_._1.companyId === cono)
+  def reportByCoNoQ(id: Rep[CompaniesHouseId]) = reportQuery.filter(_._1.companyId === id)
 
   val reportByCoNoC = Compiled(reportByCoNoQ _)
 

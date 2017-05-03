@@ -28,7 +28,7 @@ class SearchServiceGenTest extends WordSpecLike with Matchers with OptionValues 
 
   implicit val idF = FunctionK.id[TestF]
 
-  val sut = new SearchServiceGen[TestF, TestF, TestDb](CompanySearchService, repo)
+  val sut = new SearchServiceGen[TestF, TestRest, TestDb](CompanySearchService, repo)
 
   private val page1 = PageNumber(1)
   private val size25 = PageSize(25)

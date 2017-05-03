@@ -23,28 +23,30 @@ import services.CompanySearchResult
 object SearchServiceGenTestData {
 
   case class RepoTestData(
-                         reportCounts: Map[CompaniesHouseId, Int],
-                         countFiledCallCount: Int = 0,
-                         evalDbCallCount: Int = 0
-                       )
+                           reportCounts: Map[CompaniesHouseId, Int],
+                           countFiledCallCount: Int = 0,
+                           evalDbCallCount: Int = 0
+                         )
+
+  case class CompanyTestData(searchResults: Map[CompaniesHouseId, CompanySearchResult])
 
   case class SearchTestData(
-                       searchResults: Map[CompaniesHouseId, CompanySearchResult],
-                       dbData: RepoTestData
-                     )
+                             companyData: CompanyTestData,
+                             dbData: RepoTestData
+                           )
 
   val companyId1 = CompaniesHouseId("1")
   val companyName1 = "Company 1"
   val detail1 = CompanySearchResult(companyId1, companyName1, "")
 
-  val testData1 = SearchTestData(Map(companyId1 -> detail1), RepoTestData(Map(companyId1 -> 6)))
+  val testData1 = SearchTestData(CompanyTestData(Map(companyId1 -> detail1)), RepoTestData(Map(companyId1 -> 6)))
 
   val companyId2 = CompaniesHouseId("2")
   val companyName2 = "Company 2"
   val detail2 = CompanySearchResult(companyId2, companyName2, "")
 
   val testData2 = SearchTestData(
-    Map(companyId1 -> detail1, companyId2 -> detail2),
+    CompanyTestData(Map(companyId1 -> detail1, companyId2 -> detail2)),
     RepoTestData(Map(companyId1 -> 6, companyId2 -> 3))
   )
 }

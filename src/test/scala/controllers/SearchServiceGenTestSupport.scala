@@ -29,7 +29,9 @@ object SearchServiceGenTestSupport {
 
   // Accept data of type D and return a (possibly updated) instance of D and a value A
   type TestData[D, A] = D => (D, A)
+
   type TestF[A] = TestData[SearchTestData, A]
+  type TestRest[A] = TestData[CompanyTestData, A]
   type TestDb[A] = TestData[RepoTestData, A]
 
   implicit def monadD[D]: Monad[TestData[D, ?]] = new Monad[TestData[D, ?]] {
@@ -50,6 +52,7 @@ object SearchServiceGenTestSupport {
   }
 
   private val dbDataLens = GenLens[SearchTestData](_.dbData)
+  private val restDataLens = GenLens[SearchTestData](_.companyData)
   private val evalDbCountLens = GenLens[RepoTestData](_.evalDbCallCount)
   private val countFiledLens = GenLens[RepoTestData](_.countFiledCallCount)
 
@@ -66,19 +69,28 @@ object SearchServiceGenTestSupport {
     }
   }
 
+ implicit val evalRest: TestRest ~> TestF = new FunctionK[TestRest, TestF] {
+    override def apply[A](fa: TestRest[A]): TestF[A] = {
+      testData =>
+        fa.andThen {
+          case (d, a) => (restDataLens.set(d)(testData), a)
+        }(testData.companyData)
+    }
+  }
+
   object repo extends ReportRepoStub[TestDb] {
     override def countFiledReports(companiesHouseId: CompaniesHouseId): TestDb[Int] = {
       dbData => (countFiledCalled(dbData), dbData.reportCounts.getOrElse(companiesHouseId, 0))
     }
   }
 
-  object CompanySearchService extends CompanySearchService[TestF] {
-    override def searchCompanies(search: String, page: PageNumber, itemsPerPage: PageSize): TestF[PagedResults[CompanySearchResult]] = {
+  object CompanySearchService extends CompanySearchService[TestRest] {
+    override def searchCompanies(search: String, page: PageNumber, itemsPerPage: PageSize): TestRest[PagedResults[CompanySearchResult]] = {
       s =>
         (s, PagedResults.page(s.searchResults.values.toSeq, page, itemsPerPage))
     }
 
-    override def find(companiesHouseId: CompaniesHouseId): TestF[Option[CompanyDetail]] = {
+    override def find(companiesHouseId: CompaniesHouseId): TestRest[Option[CompanyDetail]] = {
       s =>
         (s, s.searchResults.get(companiesHouseId).map(r => CompanyDetail(r.companiesHouseId, r.companyName)))
     }
