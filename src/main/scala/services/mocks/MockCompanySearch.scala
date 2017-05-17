@@ -28,8 +28,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class MockCompanySearch @Inject()(implicit ec: ExecutionContext) extends CompanySearchService[Future] {
 
   val companies: Seq[CompanySearchResult] = Seq(
-    CompanySearchResult(CompaniesHouseId("000000001"), "The Testing Company", "1 Testing Way, Mockington, Stubshire"),
-    CompanySearchResult(CompaniesHouseId("000000002"), "Another company", "1 Any Other Way, Stubbsville, Mockshire, ST13 3MO")
+    CompanySearchResult(CompaniesHouseId("000000001"), "The Testing Company", Some("1 Testing Way, Mockington, Stubshire")),
+    CompanySearchResult(CompaniesHouseId("000000002"), "Another company", Some("1 Any Other Way, Stubbsville, Mockshire, ST13 3MO"))
   )
 
   override def searchCompanies(search: String, page: PageNumber, itemsPerPage: PageSize): Future[PagedResults[CompanySearchResult]] = Future {

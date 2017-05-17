@@ -37,13 +37,13 @@ object SearchServiceGenTestData {
 
   val companyId1 = CompaniesHouseId("1")
   val companyName1 = "Company 1"
-  val detail1 = CompanySearchResult(companyId1, companyName1, "")
+  val detail1 = CompanySearchResult(companyId1, companyName1, None)
 
   val testData1 = SearchTestData(CompanyTestData(Map(companyId1 -> detail1)), RepoTestData(Map(companyId1 -> 6)))
 
   val companyId2 = CompaniesHouseId("2")
   val companyName2 = "Company 2"
-  val detail2 = CompanySearchResult(companyId2, companyName2, "")
+  val detail2 = CompanySearchResult(companyId2, companyName2, None)
 
   val testData2 = SearchTestData(
     CompanyTestData(Map(companyId1 -> detail1, companyId2 -> detail2)),

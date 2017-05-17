@@ -27,7 +27,7 @@ import play.api.libs.json.Json
   */
 object CompaniesHouseModels {
 
-  case class CompaniesHouseSearchResult(company_number: CompaniesHouseId, title: String, address_snippet: String)
+  case class CompaniesHouseSearchResult(company_number: CompaniesHouseId, title: String, address_snippet: Option[String])
 
   object CompaniesHouseSearchResult extends ValueClassFormats {
     implicit def fmt = Json.format[CompaniesHouseSearchResult]

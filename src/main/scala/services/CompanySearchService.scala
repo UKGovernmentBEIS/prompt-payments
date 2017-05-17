@@ -21,7 +21,7 @@ import com.wellfactored.playbindings.ValueClassFormats
 import models.CompaniesHouseId
 import play.api.libs.json.Json
 
-case class CompanySearchResult(companiesHouseId: CompaniesHouseId, companyName: String, companyAddress: String)
+case class CompanySearchResult(companiesHouseId: CompaniesHouseId, companyName: String, companyAddress: Option[String])
 
 case class CompanyDetail(companiesHouseId: CompaniesHouseId, companyName: String)
 

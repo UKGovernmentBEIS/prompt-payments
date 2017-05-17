@@ -71,7 +71,7 @@ class VisualTestController @Inject()(
     val reports = Seq(views.html.search.report(healthyReport, df))
     val id = CompaniesHouseId("1234567890")
     val companyName = "ABC Limited"
-    val summary = CompanySearchResult(id, companyName, "123 Abc Road")
+    val summary = CompanySearchResult(id, companyName, Some("123 Abc Road"))
     val results = PagedResults(Seq(summary, summary, summary), PageNumber(1), PageSize(25), 100)
     val searches = Seq(
       html(h1("Publish a report"), views.html.search.search("cod", Some(results), Map(id -> 3), "", _ => "", _ => "")),
